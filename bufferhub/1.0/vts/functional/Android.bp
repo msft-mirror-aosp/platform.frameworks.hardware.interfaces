@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2016 The Android Open Source Project
+// Copyright (C) 2018 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,27 @@
 //
 
 cc_test {
-    name: "VtsFwkDisplayServiceV1_0TargetTest",
-    srcs: ["VtsFwkDisplayServiceV1_0TargetTest.cpp"],
+    name: "VtsHalBufferHubV1_0TargetTest",
+    defaults: [
+        "VtsHalTargetTestDefaults"
+    ],
+    header_libs: [
+        // TODO(b/118893702): remove dependency once ui/BufferHubDefs.h moved
+        // off dvr_api.h
+        "libdvr_headers",
+        "libnativewindow_headers",
+    ],
+    srcs: [
+        "VtsHalBufferHubV1_0TargetTest.cpp",
+    ],
     shared_libs: [
-        "android.frameworks.displayservice@1.0",
+        "android.frameworks.bufferhub@1.0",
+        "libcutils",
         "libhidlbase",
         "liblog",
+        "libui",
         "libutils",
     ],
-    static_libs: ["VtsHalHidlTargetTestBase"],
     cflags: [
         "-Wall",
         "-Werror",
