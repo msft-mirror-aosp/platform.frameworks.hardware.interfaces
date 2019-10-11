@@ -15,20 +15,11 @@
 //
 
 cc_test {
-    name: "VtsFwkDisplayServiceV1_0TargetTest",
-    srcs: ["VtsFwkDisplayServiceV1_0TargetTest.cpp"],
-    shared_libs: [
-        "android.frameworks.displayservice@1.0",
-        "libhidlbase",
-        "liblog",
-        "libutils",
+    name: "VtsHalStatsV1_0TargetTest",
+    defaults: ["VtsHalTargetTestDefaults"],
+    srcs: ["VtsHalStatsV1_0TargetTest.cpp"],
+    static_libs: [
+        "android.frameworks.stats@1.0",
     ],
-    static_libs: ["VtsHalHidlTargetTestBase"],
-    cflags: [
-        "-Wall",
-        "-Werror",
-        "-O0",
-        "-g",
-    ]
+    test_suites: ["general-tests"],
 }
-
