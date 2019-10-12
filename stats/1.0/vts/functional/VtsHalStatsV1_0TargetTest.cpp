@@ -128,8 +128,8 @@ TEST_F(StatsHidlTest, reportBatteryCausedShutdown) {
 
 // Sanity check IStats::reportUsbPortOverheatEvent.
 TEST_F(StatsHidlTest, reportUsbPortOverheatEvent) {
-    UsbPortOverheatEvent event = {.maxTemperatureDeciC = 220,
-                                  .plugTemperatureDeciC = 210,
+    UsbPortOverheatEvent event = {.plugTemperatureDeciC = 210,
+                                  .maxTemperatureDeciC = 220,
                                   .timeToOverheat = 1,
                                   .timeToHysteresis = 2,
                                   .timeToInactive = 3};
