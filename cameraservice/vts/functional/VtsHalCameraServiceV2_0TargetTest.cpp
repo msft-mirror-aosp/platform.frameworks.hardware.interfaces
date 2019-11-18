@@ -20,6 +20,7 @@
 #include <android/frameworks/cameraservice/device/2.0/ICameraDeviceUser.h>
 #include <android/frameworks/cameraservice/service/2.0/ICameraService.h>
 #include <system/camera_metadata.h>
+#include <system/graphics.h>
 
 #include <fmq/MessageQueue.h>
 #include <utils/Condition.h>
@@ -302,7 +303,7 @@ class VtsHalCameraServiceV2_0TargetTest : public ::testing::Test {
         for (size_t i = 0; i < rawEntry.count; i += STREAM_CONFIG_SIZE) {
             int32_t format = rawEntry.data.i32[i + STREAM_FORMAT_OFFSET];
             int32_t use = rawEntry.data.i32[i + STREAM_INOUT_OFFSET];
-            if (format == AIMAGE_FORMAT_DEPTH16 &&
+            if (format == HAL_PIXEL_FORMAT_Y16 &&
                 use == ANDROID_DEPTH_AVAILABLE_DEPTH_STREAM_CONFIGURATIONS_OUTPUT) {
                 streamConfig.width = rawEntry.data.i32[i + STREAM_WIDTH_OFFSET];
                 streamConfig.height = rawEntry.data.i32[i + STREAM_HEIGHT_OFFSET];
