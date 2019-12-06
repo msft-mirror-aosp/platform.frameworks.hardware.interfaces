@@ -28,6 +28,8 @@
 #include <utils/StrongPointer.h>
 
 #include <gtest/gtest.h>
+#include <hidl/GtestPrinter.h>
+#include <hidl/ServiceManagement.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -42,8 +44,6 @@
 #include <android/log.h>
 
 #include <CameraMetadata.h>
-#include <VtsHalHidlTargetTestBase.h>
-#include <VtsHalHidlTargetTestEnvBase.h>
 
 namespace android {
 
@@ -211,17 +211,6 @@ class CameraDeviceCallbacks : public ICameraDeviceCallback {
     bool waitForIdle() const { return waitForStatus(IDLE); }
 };
 
-class CameraHidlEnvironment : public ::testing::VtsHalHidlTargetTestEnvBase {
-   public:
-    // get the test environment singleton
-    static CameraHidlEnvironment* Instance() {
-        static CameraHidlEnvironment* instance = new CameraHidlEnvironment();
-        return instance;
-    }
-
-    virtual void registerTestServices() override { registerTestService<ICameraService>(); }
-};
-
 static bool convertFromHidlCloned(const hidl_vec<uint8_t>& metadata, CameraMetadata* rawMetadata) {
     const camera_metadata* buffer = (camera_metadata_t*)(metadata.data());
     size_t expectedSize = metadata.size();
@@ -240,11 +229,10 @@ struct StreamConfiguration {
     int32_t height = -1;
 };
 
-class VtsHalCameraServiceV2_0TargetTest : public ::testing::Test {
+class VtsHalCameraServiceV2_0TargetTest : public ::testing::TestWithParam<std::string> {
    public:
     void SetUp() override {
-        cs = ::testing::VtsHalHidlTargetTestBase::getService<ICameraService>(
-            CameraHidlEnvironment::Instance()->getServiceName<ICameraService>());
+        cs = ICameraService::getService(GetParam());
     }
 
     void TearDown() override {}
@@ -317,7 +305,7 @@ class VtsHalCameraServiceV2_0TargetTest : public ::testing::Test {
 };
 
 // Basic HIDL calls for ICameraService
-TEST_F(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
+TEST_P(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
     sp<CameraServiceListener> listener(new CameraServiceListener());
     hidl_vec<CameraStatusAndId> cameraStatuses{};
     Status status = Status::NO_ERROR;
@@ -463,12 +451,8 @@ TEST_F(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
     EXPECT_TRUE(ret.isOk() && ret == Status::NO_ERROR);
 }
 
+INSTANTIATE_TEST_SUITE_P(
+        PerInstance, VtsHalCameraServiceV2_0TargetTest,
+        testing::ValuesIn(android::hardware::getAllHalInstanceNames(ICameraService::descriptor)),
+        android::hardware::PrintInstanceNameToString);
 }  // namespace android
-
-int main(int argc, char** argv) {
-    ::testing::AddGlobalTestEnvironment(android::CameraHidlEnvironment::Instance());
-    ::testing::InitGoogleTest(&argc, argv);
-    android::CameraHidlEnvironment::Instance()->init(&argc, argv);
-    int status = RUN_ALL_TESTS();
-    return status;
-}
