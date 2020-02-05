@@ -43,4 +43,13 @@ interface ICarWindowService {
      * @return success Returns true on success.
      */
     hideWindow() generates (bool success);
+
+
+    /**
+     * Returns currently active display information.
+     *
+     * @return cfg   DisplayConfig of the active display.
+     * @return state Current state of the active display.
+     */
+    getDisplayInfo() generates (HwDisplayConfig cfg, HwDisplayState state);
 };
