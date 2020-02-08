@@ -18,7 +18,7 @@ package android.frameworks.automotive.display@1.0;
 
 import android.hardware.graphics.bufferqueue@2.0::IGraphicBufferProducer;
 
-interface ICarWindowService {
+interface IAutomotiveDisplayProxyService {
     /**
      * Gets an IGraphicBufferProducer instance from the service.
      *

@@ -17,7 +17,7 @@
 #define LOG_TAG "VtsHalAutomotiveDisplayTest"
 #include <android-base/logging.h>
 
-#include <android/frameworks/automotive/display/1.0/ICarWindowService.h>
+#include <android/frameworks/automotive/display/1.0/IAutomotiveDisplayProxyService.h>
 #include <android/hardware/graphics/bufferqueue/2.0/IGraphicBufferProducer.h>
 #include <utils/Log.h>
 
@@ -34,39 +34,39 @@ class AutomotiveDisplayHidlTest : public ::testing::TestWithParam<std::string> {
 public:
     virtual void SetUp() override {
         // Make sure we can connect to the service
-        mCarWindowService = ICarWindowService::getService(GetParam());
-        ASSERT_NE(mCarWindowService.get(), nullptr);
+        mDisplayProxy = IAutomotiveDisplayProxyService::getService(GetParam());
+        ASSERT_NE(mDisplayProxy.get(), nullptr);
     }
 
     virtual void TearDown() override {}
 
-    sp<ICarWindowService> mCarWindowService;    // Every test needs access to the service
+    sp<IAutomotiveDisplayProxyService> mDisplayProxy;    // Every test needs access to the service
 };
 
 TEST_P(AutomotiveDisplayHidlTest, getIGBP) {
     ALOGI("Test getIGraphicBufferProducer method");
 
-    sp<IGraphicBufferProducer> igbp = mCarWindowService->getIGraphicBufferProducer();
+    sp<IGraphicBufferProducer> igbp = mDisplayProxy->getIGraphicBufferProducer();
     ASSERT_NE(igbp, nullptr);
 }
 
 TEST_P(AutomotiveDisplayHidlTest, showWindow) {
     ALOGI("Test showWindow method");
 
-    ASSERT_EQ(mCarWindowService->showWindow(), true);
+    ASSERT_EQ(mDisplayProxy->showWindow(), true);
 }
 
 TEST_P(AutomotiveDisplayHidlTest, hideWindow) {
     ALOGI("Test hideWindow method");
 
-    ASSERT_EQ(mCarWindowService->hideWindow(), true);
+    ASSERT_EQ(mDisplayProxy->hideWindow(), true);
 }
 
 INSTANTIATE_TEST_SUITE_P(
     PerInstance,
     AutomotiveDisplayHidlTest,
     testing::ValuesIn(
-        android::hardware::getAllHalInstanceNames(ICarWindowService::descriptor)
+        android::hardware::getAllHalInstanceNames(IAutomotiveDisplayProxyService::descriptor)
     ),
     android::hardware::PrintInstanceNameToString
 );

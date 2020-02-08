@@ -7,7 +7,7 @@ hidl_interface {
         enabled: true,
     },
     srcs: [
-        "ICarWindowService.hal",
+        "IAutomotiveDisplayProxyService.hal"
     ],
     interfaces: [
         "android.hardware.graphics.bufferqueue@2.0",
