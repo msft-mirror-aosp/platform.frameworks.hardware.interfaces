@@ -19,6 +19,8 @@
 
 #include <android/frameworks/cameraservice/device/2.0/ICameraDeviceUser.h>
 #include <android/frameworks/cameraservice/service/2.0/ICameraService.h>
+#include <system/camera_metadata.h>
+#include <system/graphics.h>
 
 #include <fmq/MessageQueue.h>
 #include <utils/Condition.h>
@@ -26,6 +28,8 @@
 #include <utils/StrongPointer.h>
 
 #include <gtest/gtest.h>
+#include <hidl/GtestPrinter.h>
+#include <hidl/ServiceManagement.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -39,8 +43,7 @@
 
 #include <android/log.h>
 
-#include <VtsHalHidlTargetTestBase.h>
-#include <VtsHalHidlTargetTestEnvBase.h>
+#include <CameraMetadata.h>
 
 namespace android {
 
@@ -67,12 +70,14 @@ using android::hardware::hidl_string;
 using android::hardware::hidl_vec;
 using android::hardware::Return;
 using android::hardware::Void;
+using android::hardware::camera::common::V1_0::helper::CameraMetadata;
+using camera_metadata_enum_android_depth_available_depth_stream_configurations::
+    ANDROID_DEPTH_AVAILABLE_DEPTH_STREAM_CONFIGURATIONS_OUTPUT;
 using RequestMetadataQueue = hardware::MessageQueue<uint8_t, hardware::kSynchronizedReadWrite>;
 
 static constexpr int kCaptureRequestCount = 10;
-static constexpr int kImageWidth = 640;
-static constexpr int kImageHeight = 480;
-static constexpr int kImageFormat = AIMAGE_FORMAT_YUV_420_888;
+static constexpr int kVGAImageWidth = 640;
+static constexpr int kVGAImageHeight = 480;
 static constexpr int kNumRequests = 4;
 
 #define ASSERT_NOT_NULL(x) ASSERT_TRUE((x) != nullptr)
@@ -206,23 +211,30 @@ class CameraDeviceCallbacks : public ICameraDeviceCallback {
     bool waitForIdle() const { return waitForStatus(IDLE); }
 };
 
-class CameraHidlEnvironment : public ::testing::VtsHalHidlTargetTestEnvBase {
-   public:
-    // get the test environment singleton
-    static CameraHidlEnvironment* Instance() {
-        static CameraHidlEnvironment* instance = new CameraHidlEnvironment();
-        return instance;
+static bool convertFromHidlCloned(const hidl_vec<uint8_t>& metadata, CameraMetadata* rawMetadata) {
+    const camera_metadata* buffer = (camera_metadata_t*)(metadata.data());
+    size_t expectedSize = metadata.size();
+    int ret = validate_camera_metadata_structure(buffer, &expectedSize);
+    if (ret == OK || ret == CAMERA_METADATA_VALIDATION_SHIFTED) {
+        *rawMetadata = buffer;
+    } else {
+        ALOGE("%s: Malformed camera metadata received from caller", __FUNCTION__);
+        return false;
     }
+    return true;
+}
 
-    virtual void registerTestServices() override { registerTestService<ICameraService>(); }
+struct StreamConfiguration {
+    int32_t width = -1;
+    int32_t height = -1;
 };
 
-class VtsHalCameraServiceV2_0TargetTest : public ::testing::Test {
+class VtsHalCameraServiceV2_0TargetTest : public ::testing::TestWithParam<std::string> {
    public:
     void SetUp() override {
-        cs = ::testing::VtsHalHidlTargetTestBase::getService<ICameraService>(
-            CameraHidlEnvironment::Instance()->getServiceName<ICameraService>());
+        cs = ICameraService::getService(GetParam());
     }
+
     void TearDown() override {}
     // creates an outputConfiguration with no deferred streams
     OutputConfiguration createOutputConfiguration(const std::vector<native_handle_t*>& nhs) {
@@ -250,11 +262,50 @@ class VtsHalCameraServiceV2_0TargetTest : public ::testing::Test {
         captureRequest->physicalCameraSettings[0].settings.fmqMetadataSize(settingsSize);
     }
 
+    bool doesCapabilityExist(const CameraMetadata& characteristics, int capability) {
+        camera_metadata_ro_entry rawEntry =
+            characteristics.find(ANDROID_REQUEST_AVAILABLE_CAPABILITIES);
+        EXPECT_TRUE(rawEntry.count > 0);
+        for (size_t i = 0; i < rawEntry.count; i++) {
+            if (rawEntry.data.u8[i] == capability) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Return the first advertised available depth stream sizes
+    StreamConfiguration getDepthStreamConfiguration(const CameraMetadata& characteristics) {
+        camera_metadata_ro_entry rawEntry =
+            characteristics.find(ANDROID_DEPTH_AVAILABLE_DEPTH_STREAM_CONFIGURATIONS);
+        StreamConfiguration streamConfig;
+        const size_t STREAM_FORMAT_OFFSET = 0;
+        const size_t STREAM_WIDTH_OFFSET = 1;
+        const size_t STREAM_HEIGHT_OFFSET = 2;
+        const size_t STREAM_INOUT_OFFSET = 3;
+        const size_t STREAM_CONFIG_SIZE = 4;
+        if (rawEntry.count < STREAM_CONFIG_SIZE) {
+            return streamConfig;
+        }
+        EXPECT_TRUE((rawEntry.count % STREAM_CONFIG_SIZE) == 0);
+        for (size_t i = 0; i < rawEntry.count; i += STREAM_CONFIG_SIZE) {
+            int32_t format = rawEntry.data.i32[i + STREAM_FORMAT_OFFSET];
+            int32_t use = rawEntry.data.i32[i + STREAM_INOUT_OFFSET];
+            if (format == HAL_PIXEL_FORMAT_Y16 &&
+                use == ANDROID_DEPTH_AVAILABLE_DEPTH_STREAM_CONFIGURATIONS_OUTPUT) {
+                streamConfig.width = rawEntry.data.i32[i + STREAM_WIDTH_OFFSET];
+                streamConfig.height = rawEntry.data.i32[i + STREAM_HEIGHT_OFFSET];
+                return streamConfig;
+            }
+        }
+        return streamConfig;
+    }
+
     sp<ICameraService> cs = nullptr;
 };
 
 // Basic HIDL calls for ICameraService
-TEST_F(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
+TEST_P(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
     sp<CameraServiceListener> listener(new CameraServiceListener());
     hidl_vec<CameraStatusAndId> cameraStatuses{};
     Status status = Status::NO_ERROR;
@@ -265,7 +316,7 @@ TEST_F(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
         });
     EXPECT_TRUE(remoteRet.isOk() && status == Status::NO_ERROR);
     for (const auto& it : cameraStatuses) {
-        hidl_vec<uint8_t> rawMetadata;
+        CameraMetadata rawMetadata;
         listener->onStatusChanged(it);
         if (it.deviceStatus != CameraDeviceStatus::STATUS_PRESENT) {
             continue;
@@ -273,10 +324,11 @@ TEST_F(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
         remoteRet = cs->getCameraCharacteristics(
             it.cameraId, [&status, &rawMetadata](auto s, const hidl_vec<uint8_t>& metadata) {
                 status = s;
-                rawMetadata = metadata;
+                bool cStatus = convertFromHidlCloned(metadata, &rawMetadata);
+                EXPECT_TRUE(cStatus);
             });
         EXPECT_TRUE(remoteRet.isOk() && status == Status::NO_ERROR);
-        EXPECT_TRUE(rawMetadata.size() != 0);
+        EXPECT_FALSE(rawMetadata.isEmpty());
         sp<CameraDeviceCallbacks> callbacks(new CameraDeviceCallbacks());
         sp<ICameraDeviceUser> deviceRemote = nullptr;
         remoteRet = cs->connectDevice(callbacks, it.cameraId,
@@ -294,7 +346,23 @@ TEST_F(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
         });
         EXPECT_TRUE(remoteRet.isOk());
         AImageReader* reader = nullptr;
-        auto mStatus = AImageReader_new(kImageWidth, kImageHeight, kImageFormat,
+        bool isDepthOnlyDevice =
+            !doesCapabilityExist(rawMetadata,
+                                 ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE) &&
+            doesCapabilityExist(rawMetadata, ANDROID_REQUEST_AVAILABLE_CAPABILITIES_DEPTH_OUTPUT);
+        int chosenImageFormat = AIMAGE_FORMAT_YUV_420_888;
+        int chosenImageWidth = kVGAImageWidth;
+        int chosenImageHeight = kVGAImageHeight;
+        if (isDepthOnlyDevice) {
+            StreamConfiguration depthStreamConfig = getDepthStreamConfiguration(rawMetadata);
+            EXPECT_TRUE(depthStreamConfig.width != -1);
+            EXPECT_TRUE(depthStreamConfig.height != -1);
+            chosenImageFormat = AIMAGE_FORMAT_DEPTH16;
+            chosenImageWidth = depthStreamConfig.width;
+            chosenImageHeight = depthStreamConfig.height;
+        }
+
+        auto mStatus = AImageReader_new(chosenImageWidth, chosenImageHeight, chosenImageFormat,
                                         kCaptureRequestCount, &reader);
         EXPECT_EQ(mStatus, AMEDIA_OK);
         native_handle_t* wh = nullptr;
@@ -383,12 +451,8 @@ TEST_F(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
     EXPECT_TRUE(ret.isOk() && ret == Status::NO_ERROR);
 }
 
+INSTANTIATE_TEST_SUITE_P(
+        PerInstance, VtsHalCameraServiceV2_0TargetTest,
+        testing::ValuesIn(android::hardware::getAllHalInstanceNames(ICameraService::descriptor)),
+        android::hardware::PrintInstanceNameToString);
 }  // namespace android
-
-int main(int argc, char** argv) {
-    ::testing::AddGlobalTestEnvironment(android::CameraHidlEnvironment::Instance());
-    ::testing::InitGoogleTest(&argc, argv);
-    android::CameraHidlEnvironment::Instance()->init(&argc, argv);
-    int status = RUN_ALL_TESTS();
-    return status;
-}
