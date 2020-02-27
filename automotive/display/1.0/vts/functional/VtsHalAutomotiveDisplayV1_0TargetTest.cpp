@@ -17,8 +17,10 @@
 #define LOG_TAG "VtsHalAutomotiveDisplayTest"
 #include <android-base/logging.h>
 
-#include <android/frameworks/automotive/display/1.0/ICarWindowService.h>
+#include <android/frameworks/automotive/display/1.0/IAutomotiveDisplayProxyService.h>
 #include <android/hardware/graphics/bufferqueue/2.0/IGraphicBufferProducer.h>
+#include <ui/DisplayConfig.h>
+#include <ui/DisplayState.h>
 #include <utils/Log.h>
 
 #include <gtest/gtest.h>
@@ -34,39 +36,76 @@ class AutomotiveDisplayHidlTest : public ::testing::TestWithParam<std::string> {
 public:
     virtual void SetUp() override {
         // Make sure we can connect to the service
-        mCarWindowService = ICarWindowService::getService(GetParam());
-        ASSERT_NE(mCarWindowService.get(), nullptr);
+        mDisplayProxy = IAutomotiveDisplayProxyService::getService(GetParam());
+        ASSERT_NE(mDisplayProxy.get(), nullptr);
     }
 
     virtual void TearDown() override {}
 
-    sp<ICarWindowService> mCarWindowService;    // Every test needs access to the service
+    sp<IAutomotiveDisplayProxyService> mDisplayProxy;    // Every test needs access to the service
 };
 
 TEST_P(AutomotiveDisplayHidlTest, getIGBP) {
     ALOGI("Test getIGraphicBufferProducer method");
 
-    sp<IGraphicBufferProducer> igbp = mCarWindowService->getIGraphicBufferProducer();
-    ASSERT_NE(igbp, nullptr);
+    android::hardware::hidl_vec<uint64_t> displayIdList;
+    mDisplayProxy->getDisplayIdList([&displayIdList](const auto& list) {
+        displayIdList.resize(list.size());
+        for (auto i = 0; i < list.size(); ++i) {
+            displayIdList[i] = list[i];
+        }
+    });
+
+    for (const auto& id : displayIdList) {
+        // Get a display info
+        mDisplayProxy->getDisplayInfo(id, [](const auto& cfg, const auto& /*state*/) {
+            android::DisplayConfig* pConfig = (android::DisplayConfig*)cfg.data();
+            ASSERT_GT(pConfig->resolution.getWidth(), 0);
+            ASSERT_GT(pConfig->resolution.getHeight(), 0);
+        });
+
+        sp<IGraphicBufferProducer> igbp = mDisplayProxy->getIGraphicBufferProducer(id);
+        ASSERT_NE(igbp, nullptr);
+    }
 }
 
 TEST_P(AutomotiveDisplayHidlTest, showWindow) {
     ALOGI("Test showWindow method");
 
-    ASSERT_EQ(mCarWindowService->showWindow(), true);
+    android::hardware::hidl_vec<uint64_t> displayIdList;
+    mDisplayProxy->getDisplayIdList([&displayIdList](const auto& list) {
+        displayIdList.resize(list.size());
+        for (auto i = 0; i < list.size(); ++i) {
+            displayIdList[i] = list[i];
+        }
+    });
+
+    for (const auto& id : displayIdList) {
+        ASSERT_EQ(mDisplayProxy->showWindow(id), true);
+    }
 }
 
 TEST_P(AutomotiveDisplayHidlTest, hideWindow) {
     ALOGI("Test hideWindow method");
 
-    ASSERT_EQ(mCarWindowService->hideWindow(), true);
+    android::hardware::hidl_vec<uint64_t> displayIdList;
+    mDisplayProxy->getDisplayIdList([&displayIdList](const auto& list) {
+        displayIdList.resize(list.size());
+        for (auto i = 0; i < list.size(); ++i) {
+            displayIdList[i] = list[i];
+        }
+    });
+
+    for (const auto& id : displayIdList) {
+        ASSERT_EQ(mDisplayProxy->hideWindow(id), true);
+    }
 }
 
 INSTANTIATE_TEST_SUITE_P(
     PerInstance,
     AutomotiveDisplayHidlTest,
     testing::ValuesIn(
-        android::hardware::getAllHalInstanceNames(ICarWindowService::descriptor)
+        android::hardware::getAllHalInstanceNames(IAutomotiveDisplayProxyService::descriptor)
     ),
     android::hardware::PrintInstanceNameToString
 );
