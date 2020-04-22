@@ -217,6 +217,22 @@ static std::vector<Event> parseEvents(uint8_t *buf, size_t memSize) {
   return events;
 }
 
+TEST_P(SensorManagerTest, GetDefaultAccelerometer) {
+  auto accelerometer_ashmem_sensors =
+      GetSensorList([](const auto &info) { return info.type == SensorType::ACCELEROMETER; });
+  ASSERT_RESULT_OK(accelerometer_ashmem_sensors);
+
+  ASSERT_OK(
+      manager_->getDefaultSensor(SensorType::ACCELEROMETER, [&](const auto &info, auto result) {
+        if (accelerometer_ashmem_sensors->empty()) {
+          ASSERT_EQ(Result::NOT_EXIST, result);
+        } else {
+          ASSERT_OK(result);
+          ASSERT_THAT(*accelerometer_ashmem_sensors, Contains(info));
+        }
+      }));
+}
+
 TEST_P(SensorManagerTest, Accelerometer) {
   using std::literals::chrono_literals::operator""ms;
   using ::android::hardware::sensors::V1_0::implementation::convertFromRateLevel;
