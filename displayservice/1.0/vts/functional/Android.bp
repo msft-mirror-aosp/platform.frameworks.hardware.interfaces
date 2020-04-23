@@ -16,21 +16,17 @@
 
 cc_test {
     name: "VtsFwkDisplayServiceV1_0TargetTest",
+    defaults: ["VtsHalTargetTestDefaults"],
     srcs: ["VtsFwkDisplayServiceV1_0TargetTest.cpp"],
-    shared_libs: [
+    static_libs: [
         "android.frameworks.displayservice@1.0",
-        "libhidlbase",
-        "liblog",
-        "libutils",
     ],
-    header_libs: ["libhidl_gtest_helper"],
     cflags: [
         "-Wall",
         "-Werror",
         "-O0",
         "-g",
     ],
-    require_root: true,
     test_suites: ["vts"],
 }
 
