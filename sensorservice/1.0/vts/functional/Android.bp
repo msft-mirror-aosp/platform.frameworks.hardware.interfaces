@@ -29,6 +29,7 @@ cc_test {
     ],
     static_libs: [
         "android.hardware.sensors@1.0-convert",
+        "libgmock",
     ],
     header_libs: ["libhidl_gtest_helper"],
     cflags: [
