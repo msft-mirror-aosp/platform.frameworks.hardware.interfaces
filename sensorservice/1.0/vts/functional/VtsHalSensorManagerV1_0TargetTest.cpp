@@ -22,29 +22,34 @@
 #include <chrono>
 #include <thread>
 
+#include <android-base/result.h>
 #include <android/frameworks/sensorservice/1.0/ISensorManager.h>
 #include <android/frameworks/sensorservice/1.0/types.h>
 #include <android/hardware/sensors/1.0/types.h>
 #include <android/hidl/allocator/1.0/IAllocator.h>
 #include <android/sensor.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <hidl/GtestPrinter.h>
 #include <hidl/ServiceManagement.h>
 #include <sensors/convert.h>
 
+using ::android::sp;
 using ::android::frameworks::sensorservice::V1_0::ISensorManager;
 using ::android::frameworks::sensorservice::V1_0::Result;
+using ::android::hardware::hidl_memory;
+using ::android::hardware::Return;
+using ::android::hardware::Void;
 using ::android::hardware::sensors::V1_0::Event;
 using ::android::hardware::sensors::V1_0::RateLevel;
 using ::android::hardware::sensors::V1_0::SensorFlagBits;
 using ::android::hardware::sensors::V1_0::SensorFlagShift;
-using ::android::hardware::sensors::V1_0::SensorType;
+using ::android::hardware::sensors::V1_0::SensorInfo;
 using ::android::hardware::sensors::V1_0::SensorsEventFormatOffset;
-using ::android::hardware::Return;
-using ::android::hardware::Void;
-using ::android::hardware::hidl_memory;
+using ::android::hardware::sensors::V1_0::SensorType;
+using ::android::hardware::sensors::V1_0::toString;
 using ::android::hidl::allocator::V1_0::IAllocator;
-using ::android::sp;
+using ::testing::Contains;
 
 template <typename T>
 static inline ::testing::AssertionResult isOk(const Return<T> &ret) {
@@ -100,6 +105,31 @@ class SensorManagerTest : public ::testing::TestWithParam<std::string> {
     ASSERT_NE(ashmem_, nullptr);
   }
 
+  // Call getSensorList. Filter result based on |pred| if it is provided.
+  android::base::Result<std::vector<SensorInfo>> GetSensorList(
+      const std::function<bool(SensorInfo)> &pred = nullptr) {
+    Result out_result = Result::INVALID_OPERATION;
+    std::vector<SensorInfo> out_info;
+
+    auto ret = manager_->getSensorList([&](const auto &list, auto result) {
+      out_result = result;
+      if (result == Result::OK) {
+        for (const auto &info : list) {
+          if (!pred || pred(info)) {
+            out_info.push_back(info);
+          }
+        }
+      }
+    });
+    if (!ret.isOk()) {
+      return android::base::Error() << ret.description();
+    }
+    if (out_result != Result::OK) {
+      return android::base::Error() << "getSensorList returns " << toString(out_result);
+    }
+    return out_info;
+  }
+
   sp<ISensorManager> manager_;
   sp<IAllocator> ashmem_;
 };
@@ -118,15 +148,16 @@ map_region map(const hidl_memory &mem) {
 }
 
 TEST_P(SensorManagerTest, List) {
-  ASSERT_OK(manager_->getSensorList([] (__unused const auto &list, auto result) {
-    using ::android::hardware::sensors::V1_0::toString;
-    ASSERT_OK(result);
-    // Do something to the list of sensors.
-  }));
+  ASSERT_RESULT_OK(GetSensorList());
 }
 
 TEST_P(SensorManagerTest, Ashmem) {
-  GTEST_SKIP() << "TODO(b/154370035): test broken";
+  auto ashmem_sensors = GetSensorList(
+      [](const auto &info) { return info.flags & SensorFlagBits::DIRECT_CHANNEL_ASHMEM; });
+  ASSERT_RESULT_OK(ashmem_sensors);
+  if (ashmem_sensors->empty()) {
+    GTEST_SKIP() << "DIRECT_CHANNEL_ASHMEM not supported by HAL, skipping";
+  }
   auto testOne = [this](uint64_t memSize, uint64_t intendedSize,
         ISensorManager::createAshmemDirectChannel_cb callback) {
     ASSERT_OK(ashmem_->allocate(memSize, [&](bool success, const auto &mem) {
@@ -186,61 +217,76 @@ static std::vector<Event> parseEvents(uint8_t *buf, size_t memSize) {
   return events;
 }
 
+TEST_P(SensorManagerTest, GetDefaultAccelerometer) {
+  auto accelerometer_ashmem_sensors =
+      GetSensorList([](const auto &info) { return info.type == SensorType::ACCELEROMETER; });
+  ASSERT_RESULT_OK(accelerometer_ashmem_sensors);
+
+  ASSERT_OK(
+      manager_->getDefaultSensor(SensorType::ACCELEROMETER, [&](const auto &info, auto result) {
+        if (accelerometer_ashmem_sensors->empty()) {
+          ASSERT_EQ(Result::NOT_EXIST, result);
+        } else {
+          ASSERT_OK(result);
+          ASSERT_THAT(*accelerometer_ashmem_sensors, Contains(info));
+        }
+      }));
+}
+
 TEST_P(SensorManagerTest, Accelerometer) {
-  GTEST_SKIP() << "TODO(b/154370035): test broken";
   using std::literals::chrono_literals::operator""ms;
   using ::android::hardware::sensors::V1_0::implementation::convertFromRateLevel;
-  Result getSensorResult;
-  int32_t handle;
-  ASSERT_OK(manager_->getDefaultSensor(SensorType::ACCELEROMETER, [&] (const auto &info, auto result) {
-    getSensorResult = result;
-    handle = info.sensorHandle;
-    if (result == Result::OK) {
-      ASSERT_TRUE(info.flags & SensorFlagBits::DIRECT_CHANNEL_ASHMEM);
 
-      int maxLevel = (info.flags & SensorFlagBits::MASK_DIRECT_REPORT)
-          >> (int)SensorFlagShift::DIRECT_REPORT;
-      ASSERT_TRUE(maxLevel >= convertFromRateLevel(RateLevel::FAST))
-          << "Accelerometer does not support fast report rate, test cannot proceed.";
-    }
-  }));
-  if (getSensorResult == Result::NOT_EXIST) {
-    LOG(WARNING) << "Cannot find accelerometer, skipped SensorManagerTest.Accelerometer";
-    return;
+  auto accelerometer_ashmem_sensors = GetSensorList([](const auto &info) {
+    if (info.type != SensorType::ACCELEROMETER) return false;
+    if (!(info.flags & SensorFlagBits::DIRECT_CHANNEL_ASHMEM)) return false;
+    int maxLevel =
+        (info.flags & SensorFlagBits::MASK_DIRECT_REPORT) >> (int)SensorFlagShift::DIRECT_REPORT;
+    return maxLevel >= convertFromRateLevel(RateLevel::FAST);
+  });
+  ASSERT_RESULT_OK(accelerometer_ashmem_sensors);
+
+  if (accelerometer_ashmem_sensors->empty()) {
+    GTEST_SKIP() << "No accelerometer sensor that supports DIRECT_CHANNEL_ASHMEM and fast report "
+                 << "rate, skipping";
   }
-  ASSERT_OK(getSensorResult);
-  const size_t memSize = (size_t)SensorsEventFormatOffset::TOTAL_LENGTH * 300;
-  ASSERT_OK(ashmem_->allocate(memSize, [&] (bool success, const auto &mem) {
-    ASSERT_TRUE(success);
-    map_region buf = map(mem);
-    ASSERT_NE(buf, nullptr);
-    ASSERT_OK(manager_->createAshmemDirectChannel(mem, memSize, [&](const auto &chan, Result result) {
-      ASSERT_OK(result);
-      ASSERT_NE(chan, nullptr);
 
-      int32_t returnedToken;
-      ASSERT_OK(chan->configure(handle, RateLevel::FAST, [&](auto token, auto res) {
-        ASSERT_OK(res);
-        ASSERT_GT(token, 0);
-        returnedToken = token;
-      })); // ~200Hz
-      std::this_thread::sleep_for(500ms);
-      ASSERT_OK(chan->configure(handle, RateLevel::STOP, [](auto token, auto res) {
-        ASSERT_OK(res);
-        ASSERT_EQ(token, 0);
-      }));
+  for (const auto &info : *accelerometer_ashmem_sensors) {
+    int32_t handle = info.sensorHandle;
+    const size_t memSize = (size_t)SensorsEventFormatOffset::TOTAL_LENGTH * 300;
+    ASSERT_OK(ashmem_->allocate(memSize, [&](bool success, const auto &mem) {
+      ASSERT_TRUE(success);
+      map_region buf = map(mem);
+      ASSERT_NE(buf, nullptr);
+      ASSERT_OK(
+          manager_->createAshmemDirectChannel(mem, memSize, [&](const auto &chan, Result result) {
+            ASSERT_OK(result);
+            ASSERT_NE(chan, nullptr);
 
-      auto events = parseEvents(static_cast<uint8_t *>(buf.get()), memSize);
+            int32_t returnedToken;
+            ASSERT_OK(chan->configure(handle, RateLevel::FAST, [&](auto token, auto res) {
+              ASSERT_OK(res);
+              ASSERT_GT(token, 0);
+              returnedToken = token;
+            }));  // ~200Hz
+            std::this_thread::sleep_for(500ms);
+            ASSERT_OK(chan->configure(handle, RateLevel::STOP, [](auto token, auto res) {
+              ASSERT_OK(res);
+              ASSERT_EQ(token, 0);
+            }));
 
-      EXPECT_TRUE(isIncreasing(events.begin(), events.end(), [](const auto &event) {
-        return event.timestamp;
-      })) << "timestamp is not monotonically increasing";
-      for (const auto &event : events) {
-        EXPECT_EQ(returnedToken, event.sensorHandle)
-            << "configure token and sensor handle don't match.";
-      }
+            auto events = parseEvents(static_cast<uint8_t *>(buf.get()), memSize);
+
+            EXPECT_TRUE(isIncreasing(events.begin(), events.end(), [](const auto &event) {
+              return event.timestamp;
+            })) << "timestamp is not monotonically increasing";
+            for (const auto &event : events) {
+              EXPECT_EQ(returnedToken, event.sensorHandle)
+                  << "configure token and sensor handle don't match.";
+            }
+          }));
     }));
-  }));
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(
