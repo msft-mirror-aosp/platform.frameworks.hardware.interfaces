@@ -20,6 +20,7 @@ cc_test {
     shared_libs: [
         "android.frameworks.displayservice@1.0",
         "libhidlbase",
+        "libhidltransport",
         "liblog",
         "libutils",
     ],

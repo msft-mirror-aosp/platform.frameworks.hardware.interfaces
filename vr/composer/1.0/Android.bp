@@ -4,7 +4,7 @@ hidl_interface {
     name: "android.frameworks.vr.composer@1.0",
     root: "android.frameworks",
     vndk: {
-        enabled: false,
+        enabled: true,
     },
     srcs: [
         "IVrComposerClient.hal",
@@ -16,3 +16,4 @@ hidl_interface {
     ],
     gen_java: false,
 }
+
