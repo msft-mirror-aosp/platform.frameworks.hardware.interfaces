@@ -106,16 +106,12 @@ Return<void> ASensorEventQueue::onEvent(const Event &event) {
     LOG(VERBOSE) << "ASensorEventQueue::onEvent";
 
     if (static_cast<int32_t>(event.sensorType) != ASENSOR_TYPE_ADDITIONAL_INFO ||
-        mRequestAdditionalInfo.load()) {
-        {
-            Mutex::Autolock autoLock(mLock);
+            mRequestAdditionalInfo.load()) {
 
-            mQueue.emplace_back();
-            sensors_event_t* sensorEvent = &mQueue[mQueue.size() - 1];
-            android::hardware::sensors::V1_0::implementation::convertToSensorEvent(event,
-                                                                                   sensorEvent);
-        }
-
+        Mutex::Autolock autoLock(mLock);
+        mQueue.emplace_back();
+        sensors_event_t* sensorEvent = &mQueue[mQueue.size() - 1];
+        android::hardware::sensors::V1_0::implementation::convertToSensorEvent(event, sensorEvent);
         mLooper->signalSensorEvents(this);
     }
 
@@ -134,6 +130,7 @@ void ASensorEventQueue::dispatchCallback() {
 }
 
 void ASensorEventQueue::invalidate() {
+    Mutex::Autolock autoLock(mLock);
     mLooper->invalidateSensorQueue(this);
     setImpl(nullptr);
 }
