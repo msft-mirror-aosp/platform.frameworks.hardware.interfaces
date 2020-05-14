@@ -59,7 +59,12 @@ struct ASensorEventQueue
     ssize_t getEvents(ASensorEvent *events, size_t count);
     int hasEvents() const;
 
-    void dispatchCallback();
+    /**
+     * Dispatches a callback notifying it that new data is available. This MUST
+     * NOT lock mLock or a deadlock may occur if the callback destroys this
+     * event queue as invalidate() also locks mLock.
+     */
+    void dispatchCallbackMustNotLock();
 
     void invalidate();
 
@@ -73,6 +78,7 @@ private:
     std::vector<sensors_event_t> mQueue;
 
     std::atomic_bool mRequestAdditionalInfo;
+    bool mValid;
 
     DISALLOW_COPY_AND_ASSIGN(ASensorEventQueue);
 };
