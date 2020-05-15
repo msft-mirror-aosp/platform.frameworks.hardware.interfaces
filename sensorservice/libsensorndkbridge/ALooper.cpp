@@ -72,7 +72,7 @@ int ALooper::pollOnce(
         result = ALOOPER_POLL_CALLBACK;
 
         for (auto queue : mReadyQueues) {
-            queue->dispatchCallback();
+            queue->dispatchCallbackMustNotLock();
         }
 
         mReadyQueues.clear();
