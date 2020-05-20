@@ -30,11 +30,7 @@ using android::Mutex;
 using android::hardware::Return;
 
 ASensorEventQueue::ASensorEventQueue(ALooper* looper, ALooper_callbackFunc callback, void* data)
-    : mLooper(looper),
-      mCallback(callback),
-      mData(data),
-      mRequestAdditionalInfo(false),
-      mValid(true) {}
+    : mLooper(looper), mCallback(callback), mData(data), mRequestAdditionalInfo(false) {}
 
 void ASensorEventQueue::setImpl(const sp<IEventQueue> &queueImpl) {
     mQueueImpl = queueImpl;
@@ -113,19 +109,16 @@ Return<void> ASensorEventQueue::onEvent(const Event &event) {
             mRequestAdditionalInfo.load()) {
 
         Mutex::Autolock autoLock(mLock);
-        if (mValid) {
-            mQueue.emplace_back();
-            sensors_event_t* sensorEvent = &mQueue[mQueue.size() - 1];
-            android::hardware::sensors::V1_0::implementation::convertToSensorEvent(event,
-                                                                                   sensorEvent);
-            mLooper->signalSensorEvents(this);
-        }
+        mQueue.emplace_back();
+        sensors_event_t* sensorEvent = &mQueue[mQueue.size() - 1];
+        android::hardware::sensors::V1_0::implementation::convertToSensorEvent(event, sensorEvent);
+        mLooper->signalSensorEvents(this);
     }
 
     return android::hardware::Void();
 }
 
-void ASensorEventQueue::dispatchCallbackMustNotLock() {
+void ASensorEventQueue::dispatchCallback() {
     if (mCallback != NULL) {
         int res = (*mCallback)(-1 /* fd */, ALOOPER_EVENT_INPUT, mData);
 
@@ -138,7 +131,6 @@ void ASensorEventQueue::dispatchCallbackMustNotLock() {
 
 void ASensorEventQueue::invalidate() {
     Mutex::Autolock autoLock(mLock);
-    mValid = false;
     mLooper->invalidateSensorQueue(this);
     setImpl(nullptr);
 }
