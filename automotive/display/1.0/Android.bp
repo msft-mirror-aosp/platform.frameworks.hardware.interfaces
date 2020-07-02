@@ -3,9 +3,6 @@
 hidl_interface {
     name: "android.frameworks.automotive.display@1.0",
     root: "android.frameworks",
-    vndk: {
-        enabled: true,
-    },
     srcs: [
         "types.hal",
         "IAutomotiveDisplayProxyService.hal",
