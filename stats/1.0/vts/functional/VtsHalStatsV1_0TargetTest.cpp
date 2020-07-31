@@ -147,6 +147,7 @@ TEST_P(StatsHidlTest, reportVendorAtom) {
     ASSERT_TRUE(ret.isOk());
 }
 
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(StatsHidlTest);
 INSTANTIATE_TEST_SUITE_P(
         PerInstance, StatsHidlTest,
         testing::ValuesIn(android::hardware::getAllHalInstanceNames(IStats::descriptor)),

@@ -603,6 +603,7 @@ TEST_P(VtsHalCameraServiceV2_0TargetTest, CameraServiceListener2_1Test) {
     EXPECT_TRUE(remoteStatus.isOk() && remoteStatus == Status::NO_ERROR);
 }
 
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(VtsHalCameraServiceV2_0TargetTest);
 INSTANTIATE_TEST_SUITE_P(
         PerInstance, VtsHalCameraServiceV2_0TargetTest,
         testing::ValuesIn(android::hardware::getAllHalInstanceNames(ICameraService::descriptor)),
