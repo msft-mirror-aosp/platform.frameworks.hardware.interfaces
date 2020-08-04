@@ -101,6 +101,7 @@ TEST_P(AutomotiveDisplayHidlTest, hideWindow) {
     }
 }
 
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(AutomotiveDisplayHidlTest);
 INSTANTIATE_TEST_SUITE_P(
     PerInstance,
     AutomotiveDisplayHidlTest,
