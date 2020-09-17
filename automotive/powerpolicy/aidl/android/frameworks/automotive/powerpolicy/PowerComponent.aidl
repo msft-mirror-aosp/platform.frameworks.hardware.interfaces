@@ -33,57 +33,72 @@ enum PowerComponent {
   MEDIA = 2,
 
   /**
-   * This is used to turn on/off displays through power policy.
+   * This is used to turn on/off main display through power policy.
    */
-  DISPLAY = 3,
+  DISPLAY_MAIN = 3,
+
+  /**
+   * This is used to turn on/off cluster display through power policy.
+   */
+  DISPLAY_CLUSTER = 4,
+
+  /**
+   * This is used to turn on/off front passenger display through power policy.
+   */
+  DISPLAY_FRONT_PASSENGER = 5,
+
+  /**
+   * This is used to turn on/off all rear passenger displays through power policy.
+   */
+  DISPLAY_REAR_PASSENGER = 6,
 
   /**
    * This is used to turn on/off bluetooth through power policy.
    */
-  BLUETOOTH = 4,
+  BLUETOOTH = 7,
 
   /**
    * This is used to turn on/off WiFi network through power policy.
    */
-  WIFI = 5,
+  WIFI = 8,
 
   /**
    * This is used to turn on/off cellular network through power policy.
    */
-  CELLULAR = 6,
+  CELLULAR = 9,
 
   /**
    * This is used to turn on/off ethernet through power policy.
    */
-  ETHERNET = 7,
+  ETHERNET = 10,
 
   /**
    * This is used to turn on/off projection from other devices through power policy.
    */
-  PROJECTION = 8,
+  PROJECTION = 11,
 
   /**
    * This is used to turn on/off NFC through power policy.
    */
-  NFC = 9,
+  NFC = 12,
 
   /**
    * This is used to turn on/off all inputs from users through power policy.
    */
-  INPUT = 10,
+  INPUT = 13,
 
   /**
    * This is used to turn on/off voice interaction through power policy.
    */
-  VOICE_INTERACTION = 11,
+  VOICE_INTERACTION = 14,
 
   /**
    * This is used to turn on/off visual interaction through power policy.
    */
-  VISUAL_INTERACTION = 12,
+  VISUAL_INTERACTION = 15,
 
   /**
    * This is used to turn on/off trusted device detection through power policy.
    */
-  TRUSTED_DEVICE_DETECTION = 13,
+  TRUSTED_DEVICE_DETECTION = 16,
 }
