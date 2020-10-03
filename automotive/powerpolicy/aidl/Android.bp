@@ -13,10 +13,14 @@
 // limitations under the License.
 
 aidl_interface {
-    name: "carpowerpolicy_aidl_interface",
+    name: "android.frameworks.automotive.powerpolicy",
     vendor_available: true,
     srcs: [
-        "android/frameworks/automotive/powerpolicy/*.aidl",
+        "android/frameworks/automotive/powerpolicy/CarPowerPolicy.aidl",
+        "android/frameworks/automotive/powerpolicy/CarPowerPolicyFilter.aidl",
+        "android/frameworks/automotive/powerpolicy/ICarPowerPolicyChangeCallback.aidl",
+        "android/frameworks/automotive/powerpolicy/ICarPowerPolicyServer.aidl",
+        "android/frameworks/automotive/powerpolicy/PowerComponent.aidl",
     ],
     stability: "vintf",
     backend: {
@@ -25,4 +29,20 @@ aidl_interface {
             enabled: true,
         },
     },
+}
+
+aidl_interface {
+    name: "carpowerpolicy_system_notification",
+    unstable: true,
+    vendor_available: false,
+    srcs: [
+        "android/frameworks/automotive/powerpolicy/ICarPowerPolicySystemNotification.aidl",
+        "android/frameworks/automotive/powerpolicy/PolicyState.aidl",
+    ],
+    backend: {
+        java: {
+            platform_apis: true,
+            enabled: true,
+        },
+    }
 }
