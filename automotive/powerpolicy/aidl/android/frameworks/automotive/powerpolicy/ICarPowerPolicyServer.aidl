@@ -39,7 +39,7 @@ interface ICarPowerPolicyServer {
    * Gets whether the power component is turned on or off.
    *
    * @param componentId Power component ID defined in PowerComponent.aidl to check power state.
-   * @return True if the component's power state is on
+   * @return True if the component's power state is on.
    */
   boolean getPowerComponentState(in PowerComponent componentId);
 

@@ -16,18 +16,17 @@
 
 package android.frameworks.automotive.powerpolicy;
 
-import android.frameworks.automotive.powerpolicy.CarPowerPolicy;
-
 /**
- * ICarPowerPolicyChangeCallback is notified when a power policy changes.
+ * Structure to store the current policy state.
  */
-
-@VintfStability
-oneway interface ICarPowerPolicyChangeCallback {
+parcelable PolicyState {
   /**
-   * Called when a power policy is fully changed.
-   *
-   * @param policy The current policy.
+   * The current power policy ID.
    */
-  void onPolicyChanged(in CarPowerPolicy policy);
+  @utf8InCpp String policyId;
+
+  /**
+   * The current power policy group ID.
+   */
+  @utf8InCpp String policyGroupId;
 }
