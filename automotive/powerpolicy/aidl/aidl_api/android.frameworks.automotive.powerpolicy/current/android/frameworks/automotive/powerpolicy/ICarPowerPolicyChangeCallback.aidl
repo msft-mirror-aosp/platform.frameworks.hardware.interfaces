@@ -18,6 +18,5 @@
 package android.frameworks.automotive.powerpolicy;
 @VintfStability
 interface ICarPowerPolicyChangeCallback {
-  oneway void onPolicyChanging(in android.frameworks.automotive.powerpolicy.CarPowerPolicy policy);
   oneway void onPolicyChanged(in android.frameworks.automotive.powerpolicy.CarPowerPolicy policy);
 }
