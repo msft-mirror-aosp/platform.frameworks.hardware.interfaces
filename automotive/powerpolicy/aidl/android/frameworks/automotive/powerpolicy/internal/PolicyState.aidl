@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.frameworks.automotive.powerpolicy;
+package android.frameworks.automotive.powerpolicy.internal;
 
 /**
  * Structure to store the current policy state.

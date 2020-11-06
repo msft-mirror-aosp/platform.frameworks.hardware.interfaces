@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package android.frameworks.automotive.powerpolicy;
+package android.frameworks.automotive.powerpolicy.internal;
 
-import android.frameworks.automotive.powerpolicy.PolicyState;
+import android.frameworks.automotive.powerpolicy.internal.PolicyState;
 
 /**
  * ICarPowerPolicyServer is an interface implemented by the power policy daemon.

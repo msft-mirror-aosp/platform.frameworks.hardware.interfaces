@@ -32,12 +32,12 @@ aidl_interface {
 }
 
 aidl_interface {
-    name: "carpowerpolicy_system_notification",
+    name: "android.frameworks.automotive.powerpolicy.internal",
     unstable: true,
     vendor_available: false,
     srcs: [
-        "android/frameworks/automotive/powerpolicy/ICarPowerPolicySystemNotification.aidl",
-        "android/frameworks/automotive/powerpolicy/PolicyState.aidl",
+        "android/frameworks/automotive/powerpolicy/internal/ICarPowerPolicySystemNotification.aidl",
+        "android/frameworks/automotive/powerpolicy/internal/PolicyState.aidl",
     ],
     backend: {
         java: {
