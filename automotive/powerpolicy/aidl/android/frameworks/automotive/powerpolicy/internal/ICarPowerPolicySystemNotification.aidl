@@ -48,4 +48,19 @@ interface ICarPowerPolicySystemNotification {
    * @param policyId The current policy ID.
    */
   void notifyPowerPolicyChange(in @utf8InCpp String policyId);
+
+  /**
+   * CarService uses this method to tell that there is a newly defined power policy.
+   * When a new power policy is defined on the fly through "define-power-policy" in
+   * {@code CarShellCommand}, CarService makes sure that car power policy daemon maintains the same
+   * power policies.
+   *
+   * System private API for CarService.
+   *
+   * @param policyId The new policy ID.
+   * @param enabledComponents List of components to be enabled.
+   * @param disabledComponents List of components to be disabled.
+   */
+  void notifyPowerPolicyDefinition(in @utf8InCpp String policyId,
+      in @utf8InCpp String[] enabledComponents, in @utf8InCpp String[] disabledComponents);
 }
