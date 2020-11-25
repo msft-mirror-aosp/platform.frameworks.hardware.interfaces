@@ -101,4 +101,14 @@ enum PowerComponent {
    * This is used to turn on/off trusted device detection through power policy.
    */
   TRUSTED_DEVICE_DETECTION = 16,
+
+  /**
+   * This is used to turn on/off location through power policy.
+   */
+  LOCATION = 17,
+
+  /**
+   * This is used to turn on/off microphone through power policy.
+   */
+  MICROPHONE = 18,
 }
