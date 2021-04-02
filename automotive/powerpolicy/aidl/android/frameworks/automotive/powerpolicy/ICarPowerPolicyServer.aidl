@@ -32,6 +32,7 @@ import android.frameworks.automotive.powerpolicy.PowerComponent;
 interface ICarPowerPolicyServer {
   /**
    * Gets the current power policy.
+   * @throws IllegalStateException if the current policy is not set.
    */
   CarPowerPolicy getCurrentPowerPolicy();
 
@@ -40,6 +41,7 @@ interface ICarPowerPolicyServer {
    *
    * @param componentId Power component ID defined in PowerComponent.aidl to check power state.
    * @return True if the component's power state is on.
+   * @throws IllegalArgumentException if the componentId is invalid.
    */
   boolean getPowerComponentState(in PowerComponent componentId);
 
@@ -50,6 +52,8 @@ interface ICarPowerPolicyServer {
    *
    * @param callback Callback that is invoked when the power policy changes.
    * @param filter The list of components which the callback is interested in.
+   * @throws IllegalArgumentException if the callback is already registered.
+   * @throws IllegalStateException if the callback is dead.
    */
   void registerPowerPolicyChangeCallback(in ICarPowerPolicyChangeCallback callback,
       in CarPowerPolicyFilter filter);
@@ -58,6 +62,7 @@ interface ICarPowerPolicyServer {
    * Unsubscribes from power policy change.
    *
    * @param callback Callback that doesn't want to receive power policy change.
+   * @throws IllegalArgumentException if the callback is not registered.
    */
   void unregisterPowerPolicyChangeCallback(in ICarPowerPolicyChangeCallback callback);
 }
