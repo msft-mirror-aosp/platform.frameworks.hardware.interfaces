@@ -36,6 +36,7 @@ interface ICarPowerPolicySystemNotification {
    * System private API for CarService.
    *
    * @return The current power policy ID and power policy group ID.
+   * @throws SecurityException if the caller doesn't have sufficient permissions.
    */
   PolicyState notifyCarServiceReady();
 
@@ -46,6 +47,8 @@ interface ICarPowerPolicySystemNotification {
    * System private API for CarService.
    *
    * @param policyId The current policy ID.
+   * @throws IllegalStateException if it fails to notify power policy change.
+   * @throws SecurityException if the caller doesn't have sufficient permissions.
    */
   void notifyPowerPolicyChange(in @utf8InCpp String policyId);
 
@@ -60,6 +63,8 @@ interface ICarPowerPolicySystemNotification {
    * @param policyId The new policy ID.
    * @param enabledComponents List of components to be enabled.
    * @param disabledComponents List of components to be disabled.
+   * @throws IllegalStateException if it fails to notify power policy definition.
+   * @throws SecurityException if the caller doesn't have sufficient permissions.
    */
   void notifyPowerPolicyDefinition(in @utf8InCpp String policyId,
       in @utf8InCpp String[] enabledComponents, in @utf8InCpp String[] disabledComponents);
