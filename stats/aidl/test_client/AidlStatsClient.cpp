@@ -43,8 +43,8 @@ void show_help() {
 int main(int argc, char* argv[]) {
     // get instance of the aidl version
     const std::string instance = std::string() + IStats::descriptor + "/default";
-    std::shared_ptr<IStats> service = aidl::android::frameworks::stats::IStats::fromBinder(
-        ndk::SpAIBinder(AServiceManager_getService(instance.c_str())));
+    std::shared_ptr<IStats> service =
+        IStats::fromBinder(ndk::SpAIBinder(AServiceManager_getService(instance.c_str())));
     if (!service) {
         std::cerr << "No Stats aidl HAL";
         return 1;
