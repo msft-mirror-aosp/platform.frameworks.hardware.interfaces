@@ -42,5 +42,5 @@ aidl_interface {
     // version only during the release.
     // Run "m android.frameworks.automotive.telemetry-update-api" to update the
     // "aidl_api/.../current/" dir.
-    versions: [],
+    versions: ["1"],
 }
