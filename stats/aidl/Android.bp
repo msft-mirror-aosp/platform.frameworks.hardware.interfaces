@@ -28,10 +28,11 @@ aidl_interface {
         },
         java: {
             enabled: true,
-            platform_apis: true
+            platform_apis: true,
         },
         ndk: {
             enabled: true,
         },
     },
+    versions: ["1"],
 }
