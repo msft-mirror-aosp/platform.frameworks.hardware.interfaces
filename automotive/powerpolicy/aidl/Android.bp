@@ -33,6 +33,7 @@ aidl_interface {
             enabled: true,
         },
     },
+    versions: ["1"],
 }
 
 aidl_interface {
@@ -48,5 +49,5 @@ aidl_interface {
             platform_apis: true,
             enabled: true,
         },
-    }
+    },
 }
