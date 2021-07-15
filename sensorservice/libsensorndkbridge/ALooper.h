@@ -37,7 +37,7 @@ struct ALooper {
 
     void invalidateSensorQueue(android::wp<ASensorEventQueue> queue);
 
-private:
+   private:
     android::Mutex mLock;
     android::Condition mCondition;
 
