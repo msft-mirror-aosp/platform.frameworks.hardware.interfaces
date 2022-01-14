@@ -48,7 +48,6 @@ aidl_interface {
         "android/frameworks/automotive/powerpolicy/internal/ICarPowerPolicySystemNotification.aidl",
         "android/frameworks/automotive/powerpolicy/internal/PolicyState.aidl",
     ],
-    stability: "vintf",
     backend: {
         java: {
             sdk_version: "module_current",
