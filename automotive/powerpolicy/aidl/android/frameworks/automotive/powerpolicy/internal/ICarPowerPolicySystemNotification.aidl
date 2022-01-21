@@ -26,7 +26,6 @@ import android.frameworks.automotive.powerpolicy.internal.PolicyState;
  *
  * @hide
  */
-@VintfStability
 interface ICarPowerPolicySystemNotification {
   /**
    * CarService uses this method to tell that CarService is ready for taking over power policy
