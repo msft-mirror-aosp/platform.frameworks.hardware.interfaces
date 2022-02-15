@@ -23,8 +23,9 @@ import android.frameworks.automotive.powerpolicy.internal.PolicyState;
  * VHAL changes the power policy and the power policy daemon notifies the change to registered
  * subscribers. When subscribing to policy changes, a filter can be specified so that the registered
  * callbacks can listen only to a specific power component's change.
+ *
+ * @hide
  */
-
 interface ICarPowerPolicySystemNotification {
   /**
    * CarService uses this method to tell that CarService is ready for taking over power policy
