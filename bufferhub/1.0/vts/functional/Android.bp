@@ -1,4 +1,5 @@
-// Copyright (C) 2021 The Android Open Source Project
+//
+// Copyright (C) 2018 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,24 +19,31 @@ package {
 }
 
 cc_test {
-    name: "VtsHalCarTelemetryTest",
-    defaults: ["VtsHalTargetTestDefaults", "use_libaidlvintf_gtest_helper_static"],
-    srcs: ["VtsHalCarTelemetryTest.cpp"],
+    name: "VtsHalBufferHubV1_0TargetTest",
+    defaults: [
+        "Vts10HalTargetTestDefaults"
+    ],
+    header_libs: [
+        // TODO(b/118893702): remove dependency once ui/BufferHubDefs.h moved
+        // off dvr_api.h
+        "libdvr_headers",
+        "libnativewindow_headers",
+    ],
+    srcs: [
+        "VtsHalBufferHubV1_0TargetTest.cpp",
+    ],
     shared_libs: [
-        "libbinder_ndk",
-    ],
-    // libbase, liblog, libutils are declared in "VtsHalTargetTestDefaults".
-    static_libs: [
-        "libgflags",
-        "libgmock",
-        "android.frameworks.automotive.telemetry-V1-ndk",
-    ],
-    test_suites: [
-        "general-tests",
-        "vts",
+        "android.frameworks.bufferhub@1.0",
+        "libcutils",
+        "libhidlbase",
+        "liblog",
+        "libui",
+        "libutils",
     ],
     cflags: [
+        "-Wall",
+        "-Werror",
         "-O0",
         "-g",
-    ],
+    ]
 }
