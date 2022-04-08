@@ -162,7 +162,6 @@ TEST_P(DisplayServiceTest, TestVsync) {
     EXPECT_BAD_VALUE(receiver->setVsyncRate(-1000));
 }
 
-GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(DisplayServiceTest);
 INSTANTIATE_TEST_SUITE_P(
     PerInstance, DisplayServiceTest,
     testing::ValuesIn(android::hardware::getAllHalInstanceNames(IDisplayService::descriptor)),

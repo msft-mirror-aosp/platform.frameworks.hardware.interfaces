@@ -14,10 +14,6 @@
 // limitations under the License.
 //
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
-}
-
 cc_test {
     name: "VtsHalBufferHubV1_0TargetTest",
     defaults: [
@@ -47,3 +43,4 @@ cc_test {
         "-g",
     ]
 }
+

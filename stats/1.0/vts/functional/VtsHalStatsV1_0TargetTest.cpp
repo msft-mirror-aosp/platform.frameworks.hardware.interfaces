@@ -48,7 +48,7 @@ class StatsHidlTest : public ::testing::TestWithParam<std::string> {
     sp<IStats> client;
 };
 
-// Validate IStats::reportSpeakerImpedance.
+// Sanity check IStats::reportSpeakerImpedance.
 TEST_P(StatsHidlTest, reportSpeakerImpedance) {
     SpeakerImpedance impedance = {.speakerLocation = 0,
                                   .milliOhms = static_cast<int32_t>(1234 * 1000)};
@@ -57,7 +57,7 @@ TEST_P(StatsHidlTest, reportSpeakerImpedance) {
     ASSERT_TRUE(ret.isOk());
 }
 
-// Validate IStats::reportHardwareFailed.
+// Sanity check IStats::reportHardwareFailed.
 TEST_P(StatsHidlTest, reportHardwareFailed) {
     HardwareFailed failed = {.hardwareType = HardwareFailed::HardwareType::CODEC,
                              .hardwareLocation = 0,
@@ -68,7 +68,7 @@ TEST_P(StatsHidlTest, reportHardwareFailed) {
     ASSERT_TRUE(ret.isOk());
 }
 
-// Validate IStats::reportChargeCycles.
+// Sanity check IStats::reportChargeCycles.
 TEST_P(StatsHidlTest, reportChargeCycles) {
     std::vector<int> charge_cycles = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     ChargeCycles cycles;
@@ -79,7 +79,7 @@ TEST_P(StatsHidlTest, reportChargeCycles) {
     ASSERT_TRUE(ret.isOk());
 }
 
-// Validate IStats::reportBatteryHealthSnapshot.
+// Sanity check IStats::reportBatteryHealthSnapshot.
 TEST_P(StatsHidlTest, reportBatteryHealthSnapshot) {
     BatteryHealthSnapshotArgs args{.temperatureDeciC = 3000,
                                    .voltageMicroV = 1,
@@ -94,7 +94,7 @@ TEST_P(StatsHidlTest, reportBatteryHealthSnapshot) {
     ASSERT_TRUE(ret.isOk());
 }
 
-// Validate IStats::reportSlowIo.
+// Sanity check IStats::reportSlowIo.
 TEST_P(StatsHidlTest, reportSlowIo) {
     SlowIo slowio = {.operation = SlowIo::IoOperation::READ, .count = 5};
 
@@ -104,7 +104,7 @@ TEST_P(StatsHidlTest, reportSlowIo) {
     ASSERT_TRUE(ret.isOk());
 }
 
-// Validate IStats::reportBatteryCausedShutdown.
+// Sanity check IStats::reportBatteryCausedShutdown.
 TEST_P(StatsHidlTest, reportBatteryCausedShutdown) {
     BatteryCausedShutdown shutdown = {.voltageMicroV = 3};
 
@@ -113,7 +113,7 @@ TEST_P(StatsHidlTest, reportBatteryCausedShutdown) {
     ASSERT_TRUE(ret.isOk());
 }
 
-// Validate IStats::reportUsbPortOverheatEvent.
+// Sanity check IStats::reportUsbPortOverheatEvent.
 TEST_P(StatsHidlTest, reportUsbPortOverheatEvent) {
     UsbPortOverheatEvent event = {.plugTemperatureDeciC = 210,
                                   .maxTemperatureDeciC = 220,
@@ -126,7 +126,7 @@ TEST_P(StatsHidlTest, reportUsbPortOverheatEvent) {
     ASSERT_TRUE(ret.isOk());
 }
 
-// Validate IStats::reportVendorAtom.
+// Sanity check IStats::reportVendorAtom.
 TEST_P(StatsHidlTest, reportVendorAtom) {
     std::vector<Value> values;
     Value tmp;
@@ -147,7 +147,6 @@ TEST_P(StatsHidlTest, reportVendorAtom) {
     ASSERT_TRUE(ret.isOk());
 }
 
-GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(StatsHidlTest);
 INSTANTIATE_TEST_SUITE_P(
         PerInstance, StatsHidlTest,
         testing::ValuesIn(android::hardware::getAllHalInstanceNames(IStats::descriptor)),

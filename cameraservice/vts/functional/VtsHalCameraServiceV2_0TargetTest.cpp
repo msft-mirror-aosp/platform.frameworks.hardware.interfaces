@@ -18,7 +18,6 @@
 //#define LOG_NDEBUG 0
 
 #include <android/frameworks/cameraservice/device/2.0/ICameraDeviceUser.h>
-#include <android/frameworks/cameraservice/device/2.1/ICameraDeviceUser.h>
 #include <android/frameworks/cameraservice/service/2.0/ICameraService.h>
 #include <android/frameworks/cameraservice/service/2.1/ICameraService.h>
 #include <system/camera_metadata.h>
@@ -537,33 +536,6 @@ TEST_P(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
         statusRet = deviceRemote->deleteStream(streamId);
         EXPECT_TRUE(statusRet.isOk() && statusRet == Status::NO_ERROR);
 
-        /**
-         * For camera device V2.1, test newly added functions.
-         * TODO: Refactor the device 2.1 test into a separate test for service 2.2.
-         */
-        auto castResult =
-            android::frameworks::cameraservice::device::V2_1::ICameraDeviceUser::castFrom(
-                deviceRemote);
-        sp<android::frameworks::cameraservice::device::V2_1::ICameraDeviceUser> deviceRemote2_1;
-        if (castResult.isOk()) {
-            deviceRemote2_1 = castResult;
-        }
-        if (deviceRemote2_1 != nullptr) {
-            // Reconfigure a capture session using v2.1 version of the device
-            ret = deviceRemote2_1->beginConfigure();
-            EXPECT_TRUE(ret.isOk() && ret == Status::NO_ERROR);
-            remoteRet =
-                deviceRemote2_1->createStream(output, [&status, &streamId](Status s, auto sId) {
-                    status = s;
-                    streamId = sId;
-                });
-            EXPECT_TRUE(remoteRet.isOk() && status == Status::NO_ERROR);
-            EXPECT_TRUE(streamId >= 0);
-            ret = deviceRemote2_1->endConfigure_2_1(StreamConfigurationMode::NORMAL_MODE,
-                                                    hidlParams, systemTime());
-            EXPECT_TRUE(ret.isOk() && ret == Status::NO_ERROR);
-        }
-
         remoteRet = deviceRemote->disconnect();
         EXPECT_TRUE(remoteRet.isOk());
     }
@@ -631,7 +603,6 @@ TEST_P(VtsHalCameraServiceV2_0TargetTest, CameraServiceListener2_1Test) {
     EXPECT_TRUE(remoteStatus.isOk() && remoteStatus == Status::NO_ERROR);
 }
 
-GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(VtsHalCameraServiceV2_0TargetTest);
 INSTANTIATE_TEST_SUITE_P(
         PerInstance, VtsHalCameraServiceV2_0TargetTest,
         testing::ValuesIn(android::hardware::getAllHalInstanceNames(ICameraService::descriptor)),
