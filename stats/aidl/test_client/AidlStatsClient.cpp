@@ -79,8 +79,11 @@ int main(int argc, char* argv[]) {
                 values.push_back(tmp);
                 tmp.set<VendorAtomValue::intValue>(3);
                 values.push_back(tmp);
-                VendorAtom atom = {
-                    .reverseDomainName = "", .atomId = 100001, .values = values};
+                tmp.set<VendorAtomValue::boolValue>(true);
+                values.push_back(tmp);
+                tmp.set<VendorAtomValue::boolValue>(false);
+                values.push_back(tmp);
+                VendorAtom atom = {.reverseDomainName = "", .atomId = 104999, .values = values};
                 const ndk::ScopedAStatus ret = service->reportVendorAtom(atom);
                 if (!ret.isOk()) {
                     std::cout << "reportVendorAtom failed: " << ret.getServiceSpecificError()
