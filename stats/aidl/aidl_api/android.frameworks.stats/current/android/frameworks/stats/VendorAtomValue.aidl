@@ -38,4 +38,5 @@ union VendorAtomValue {
   long longValue;
   float floatValue;
   String stringValue;
+  boolean boolValue;
 }
