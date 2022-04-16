@@ -54,7 +54,11 @@ TEST_P(StatsAidlTest, reportVendorAtom) {
     values.push_back(tmp);
     tmp.set<VendorAtomValue::intValue>(3);
     values.push_back(tmp);
-    VendorAtom atom = {.reverseDomainName = "", .atomId = 100001, .values = values};
+    tmp.set<VendorAtomValue::boolValue>(true);
+    values.push_back(tmp);
+    tmp.set<VendorAtomValue::boolValue>(false);
+    values.push_back(tmp);
+    VendorAtom atom = {.reverseDomainName = "", .atomId = 104999, .values = values};
     const ndk::ScopedAStatus ret = client->reportVendorAtom(atom);
 
     ASSERT_TRUE(ret.isOk());
