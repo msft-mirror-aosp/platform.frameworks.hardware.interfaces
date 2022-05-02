@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,11 @@
 // with such a backward incompatible change, it has a high risk of breaking
 // later when a module using the interface is updated, e.g., Mainline modules.
 
-package android.frameworks.automotive.powerpolicy.internal;
-/* @hide */
-@VintfStability
-interface ICarPowerPolicySystemNotification {
-  android.frameworks.automotive.powerpolicy.internal.PolicyState notifyCarServiceReady();
-  void notifyPowerPolicyChange(in @utf8InCpp String policyId, boolean force);
-  void notifyPowerPolicyDefinition(in @utf8InCpp String policyId, in @utf8InCpp String[] enabledComponents, in @utf8InCpp String[] disabledComponents);
+package android.frameworks.automotive.display;
+@Backing(type="int") @VintfStability
+enum Rotation {
+  ROTATION_0 = 0,
+  ROTATION_90 = 1,
+  ROTATION_180 = 2,
+  ROTATION_270 = 3,
 }
