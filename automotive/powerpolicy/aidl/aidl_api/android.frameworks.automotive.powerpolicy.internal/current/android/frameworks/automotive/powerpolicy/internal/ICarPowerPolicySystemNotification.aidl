@@ -33,6 +33,7 @@
 
 package android.frameworks.automotive.powerpolicy.internal;
 /* @hide */
+@VintfStability
 interface ICarPowerPolicySystemNotification {
   android.frameworks.automotive.powerpolicy.internal.PolicyState notifyCarServiceReady();
   void notifyPowerPolicyChange(in @utf8InCpp String policyId, boolean force);
