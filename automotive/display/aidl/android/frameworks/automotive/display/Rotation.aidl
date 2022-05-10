@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package android.frameworks.automotive.powerpolicy.internal;
+package android.frameworks.automotive.display;
 
 /**
- * Structure to store the current policy state.
+ * Rotation:
+ *
+ * The required counterclockwise rotation of EVS camera stream and display.
  */
 @VintfStability
-parcelable PolicyState {
-  /**
-   * The current power policy ID.
-   */
-  @utf8InCpp String policyId;
-
-  /**
-   * The current power policy group ID.
-   */
-  @utf8InCpp String policyGroupId;
+@Backing(type="int")
+enum Rotation {
+    /** No rotation */
+    ROTATION_0 = 0,
+    /** Rotate by 90 degree counterclockwise */
+    ROTATION_90 = 1,
+    /** Rotate by 180 degree counterclockwise */
+    ROTATION_180 = 2,
+    /** Rotate by 270 degree counterclockwise */
+    ROTATION_270 = 3
 }
