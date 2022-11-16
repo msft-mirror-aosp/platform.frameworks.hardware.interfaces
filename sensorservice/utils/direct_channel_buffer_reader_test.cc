@@ -97,7 +97,10 @@ class TestableDirectChannelBufferReader : public DirectChannelBufferReader {
 class DirectChannelBufferReaderTest : public ::testing::Test {
    protected:
     DirectChannelBufferReaderTest()
-        : buffer_(new sensors_event_t[kBufferSize]), reader_(buffer_.get(), kBufferSize) {}
+        : buffer_(new sensors_event_t[kBufferSize]), reader_(buffer_.get(), kBufferSize) {
+        memset(buffer_.get(), 0, sizeof(sensors_event_t) * kBufferSize);
+    }
+
     void WriteOneSample() {
         WritePartialSample();
         FinishWritingSample();
