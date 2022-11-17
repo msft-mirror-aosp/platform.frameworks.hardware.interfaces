@@ -96,10 +96,7 @@ class TestableDirectChannelBufferReader : public DirectChannelBufferReader {
 
 class DirectChannelBufferReaderTest : public ::testing::Test {
    protected:
-    DirectChannelBufferReaderTest()
-        : buffer_(new sensors_event_t[kBufferSize]), reader_(buffer_.get(), kBufferSize) {
-        memset(buffer_.get(), 0, sizeof(sensors_event_t) * kBufferSize);
-    }
+    DirectChannelBufferReaderTest() : buffer_{}, reader_(&buffer_[0], kBufferSize) {}
 
     void WriteOneSample() {
         WritePartialSample();
@@ -156,7 +153,7 @@ class DirectChannelBufferReaderTest : public ::testing::Test {
     }
 
     static constexpr int kBufferSize = 20;
-    const std::unique_ptr<sensors_event_t[]> buffer_;
+    std::array<sensors_event_t, kBufferSize> buffer_;
     TestableDirectChannelBufferReader reader_;
 
     int next_buffer_index_ = 0;
