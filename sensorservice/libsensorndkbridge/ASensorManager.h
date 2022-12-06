@@ -18,8 +18,8 @@
 
 #define A_SENSOR_MANAGER_H_
 
-#include <aidl/android/frameworks/sensorservice/ISensorManager.h>
 #include <android-base/macros.h>
+#include <android/frameworks/sensorservice/1.0/ISensorManager.h>
 #include <android/sensor.h>
 #include <utils/Mutex.h>
 #include <utils/RefBase.h>
@@ -48,23 +48,26 @@ struct ASensorManager {
     // ALooper.
     void destroyEventQueue(ASensorEventQueue *queue);
 
-    static void serviceDied(void* cookie);
+private:
 
-   private:
-    using ISensorManager = aidl::android::frameworks::sensorservice::ISensorManager;
-    using SensorInfo = aidl::android::hardware::sensors::SensorInfo;
+    struct SensorDeathRecipient : public android::hardware::hidl_death_recipient
+    {
+        // hidl_death_recipient interface
+        virtual void serviceDied(uint64_t cookie,
+                const ::android::wp<::android::hidl::base::V1_0::IBase>& who) override;
+    };
+
+    using ISensorManager = android::frameworks::sensorservice::V1_0::ISensorManager;
+    using SensorInfo = android::hardware::sensors::V1_0::SensorInfo;
 
     static ASensorManager *sInstance;
-    ndk::ScopedAIBinder_DeathRecipient mDeathRecipient;
+    android::sp<SensorDeathRecipient> mDeathRecipient = nullptr;
 
     android::status_t mInitCheck;
-    std::shared_ptr<ISensorManager> mManager;
-
-    mutable android::Mutex mQueuesLock;
-    std::vector<std::shared_ptr<ASensorEventQueue>> mQueues;
+    android::sp<ISensorManager> mManager;
 
     mutable android::Mutex mLock;
-    std::vector<SensorInfo> mSensors;
+    android::hardware::hidl_vec<SensorInfo> mSensors;
     std::unique_ptr<ASensorRef[]> mSensorList;
 
     DISALLOW_COPY_AND_ASSIGN(ASensorManager);

@@ -18,32 +18,31 @@
 
 #define A_SENSOR_EVENT_QUEUE_H_
 
-#include <aidl/android/frameworks/sensorservice/BnEventQueueCallback.h>
-#include <aidl/android/frameworks/sensorservice/IEventQueue.h>
-#include <aidl/sensors/convert.h>
-#include <android-base/macros.h>
-#include <android/binder_auto_utils.h>
+#include <android/frameworks/sensorservice/1.0/IEventQueue.h>
+#include <android/frameworks/sensorservice/1.0/IEventQueueCallback.h>
 #include <android/looper.h>
 #include <android/sensor.h>
+#include <android-base/macros.h>
+#include <sensors/convert.h>
 #include <utils/Mutex.h>
-#include <utils/RefBase.h>
 
 #include <atomic>
 
 struct ALooper;
 
-struct ASensorEventQueue : public aidl::android::frameworks::sensorservice::BnEventQueueCallback {
-    using Event = aidl::android::hardware::sensors::Event;
-    using IEventQueue = aidl::android::frameworks::sensorservice::IEventQueue;
+struct ASensorEventQueue
+    : public android::frameworks::sensorservice::V1_0::IEventQueueCallback {
+    using Event = android::hardware::sensors::V1_0::Event;
+    using IEventQueue = android::frameworks::sensorservice::V1_0::IEventQueue;
 
     ASensorEventQueue(
             ALooper *looper,
             ALooper_callbackFunc callback,
             void *data);
 
-    ndk::ScopedAStatus onEvent(const Event& event) override;
+    android::hardware::Return<void> onEvent(const Event &event) override;
 
-    void setImpl(const std::shared_ptr<IEventQueue>& queueImpl);
+    void setImpl(const android::sp<IEventQueue> &queueImpl);
 
     int registerSensor(
             ASensorRef sensor,
@@ -68,7 +67,7 @@ private:
     ALooper *mLooper;
     ALooper_callbackFunc mCallback;
     void *mData;
-    std::shared_ptr<IEventQueue> mQueueImpl;
+    android::sp<IEventQueue> mQueueImpl;
 
     android::Mutex mLock;
     std::vector<sensors_event_t> mQueue;
