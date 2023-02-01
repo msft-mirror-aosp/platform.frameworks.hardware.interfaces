@@ -25,17 +25,17 @@ cc_test {
         "use_libaidlvintf_gtest_helper_static",
     ],
     srcs: [
-        "VtsHalStatsTargetTest.cpp"
+        "VtsHalStatsTargetTest.cpp",
     ],
     shared_libs: [
         "libbinder_ndk",
         "libvndksupport",
     ],
     static_libs: [
-        "android.frameworks.stats-V1-ndk",
+        "android.frameworks.stats-V2-ndk",
     ],
     test_suites: [
         "general-tests",
-        "vts"
+        "vts",
     ],
 }
