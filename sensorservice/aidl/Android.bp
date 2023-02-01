@@ -1,0 +1,23 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+aidl_interface {
+    name: "android.frameworks.sensorservice",
+    vendor_available: true,
+    host_supported: true,
+    srcs: ["android/frameworks/sensorservice/*.aidl"],
+    stability: "vintf",
+    imports: [
+        "android.hardware.sensors-V2",
+        "android.hardware.common-V2",
+    ],
+    backend: {
+        cpp: {
+            enabled: false,
+        },
+        java: {
+            enabled: false,
+        },
+    },
+}

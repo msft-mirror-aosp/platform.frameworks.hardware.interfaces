@@ -35,4 +35,6 @@ package android.frameworks.automotive.telemetry;
 @VintfStability
 interface ICarTelemetry {
   void write(in android.frameworks.automotive.telemetry.CarData[] dataList);
+  void addCallback(in android.frameworks.automotive.telemetry.CallbackConfig config, in android.frameworks.automotive.telemetry.ICarTelemetryCallback callback);
+  void removeCallback(in android.frameworks.automotive.telemetry.ICarTelemetryCallback callback);
 }
