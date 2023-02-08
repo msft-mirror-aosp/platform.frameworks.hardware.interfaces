@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2021 The Android Open Source Project
+// Copyright (C) 2023 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,11 +32,15 @@
 // later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.frameworks.stats;
-@VintfStability
-parcelable VendorAtom {
-  String reverseDomainName;
-  int atomId;
-  android.frameworks.stats.VendorAtomValue[] values;
-  @nullable android.frameworks.stats.AnnotationSet[] valuesAnnotations;
-  @nullable android.frameworks.stats.Annotation[] atomAnnotations;
+@Backing(type="int") @VintfStability
+enum AnnotationId {
+  UNKNOWN = 0,
+  IS_UID = 1,
+  TRUNCATE_TIMESTAMP = 2,
+  PRIMARY_FIELD = 3,
+  EXCLUSIVE_STATE = 4,
+  PRIMARY_FIELD_FIRST_UID = 5,
+  DEFAULT_STATE = 6,
+  TRIGGER_STATE_RESET = 7,
+  STATE_NESTED = 8,
 }
