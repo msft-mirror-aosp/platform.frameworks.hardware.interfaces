@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2022 The Android Open Source Project
+// Copyright (C) 2023 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,33 +14,19 @@
 // limitations under the License.
 //
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
-}
-
-java_test_host {
-    name: "VtsVendorAtomHostJavaTest",
+android_test {
+    name: "VtsVendorAtomJavaTest",
+    platform_apis: true,
     srcs: [
         "src/**/*.java",
     ],
-    test_suites: [
-        "vts",
-        "general-tests",
+    privileged: true,
+    static_libs: [
+        "junit",
+        "android.frameworks.stats-V2-java",
+        "compatibility-device-util-axt",
     ],
     libs: [
-        "compatibility-host-util",
-        "cts-tradefed",
-        "host-libprotobuf-java-full",
-        "platformprotos",
-        "tradefed",
-        "truth-prebuilt",
-    ],
-    static_libs: [
-        "cts-statsd-atom-host-test-utils",
-        "//hardware/google/pixel:pixelatoms-java_host",
-    ],
-    data: [
-        ":VtsVendorAtomJavaTest",
-        "//hardware/google/pixel:pixelatoms-java_host",
+        "android.test.runner",
     ],
 }
