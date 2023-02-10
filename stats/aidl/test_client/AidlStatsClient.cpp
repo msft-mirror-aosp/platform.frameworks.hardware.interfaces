@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 #include <aidl/android/frameworks/stats/IStats.h>
-
 #include <android/binder_manager.h>
-
+#include <getopt.h>
 #include <statslog.h>
 
-#include <getopt.h>
 #include <iostream>
 
-using aidl::android::frameworks::stats::IStats;
-using aidl::android::frameworks::stats::VendorAtom;
-using aidl::android::frameworks::stats::VendorAtomValue;
+using namespace aidl::android::frameworks::stats;
 
 void expect_message(int32_t action) {
     std::cout << "expect the following log in logcat:\n";
@@ -105,7 +101,51 @@ int main(int argc, char* argv[]) {
                 std::vector<uint8_t> byteArrayValue = {21, 50, 3};
                 tmp.set<VendorAtomValue::byteArrayValue>(byteArrayValue);
                 values.push_back(tmp);
-                VendorAtom atom = {.reverseDomainName = "", .atomId = 104999, .values = values};
+
+                // example of atom level annotation
+                Annotation atomAnnotation{AnnotationId::TRUNCATE_TIMESTAMP, true};
+                std::vector<std::optional<Annotation>> atomAnnotations;
+                atomAnnotations.push_back(std::make_optional<Annotation>(atomAnnotation));
+
+                // values annotation
+                std::vector<std::optional<AnnotationSet>> valuesAnnotations;
+                {
+                    AnnotationSet valueAnnotationSet;
+                    valueAnnotationSet.valueIndex = 0;
+                    valueAnnotationSet.annotations.push_back(
+                        Annotation{AnnotationId::PRIMARY_FIELD, true});
+                    valuesAnnotations.push_back(
+                        std::make_optional<AnnotationSet>(valueAnnotationSet));
+                }
+                {
+                    AnnotationSet valueAnnotationSet;
+                    valueAnnotationSet.valueIndex = 1;
+                    valueAnnotationSet.annotations.push_back(
+                        Annotation{AnnotationId::IS_UID, true});
+                    valuesAnnotations.push_back(
+                        std::make_optional<AnnotationSet>(valueAnnotationSet));
+                }
+                {
+                    AnnotationSet valueAnnotationSet;
+                    valueAnnotationSet.valueIndex = 4;
+                    valueAnnotationSet.annotations.push_back(
+                        Annotation{AnnotationId::EXCLUSIVE_STATE, true});
+                    valueAnnotationSet.annotations.push_back(
+                        Annotation{AnnotationId::STATE_NESTED, true});
+                    valueAnnotationSet.annotations.push_back(
+                        Annotation{AnnotationId::TRIGGER_STATE_RESET, 0});
+                    valuesAnnotations.push_back(
+                        std::make_optional<AnnotationSet>(valueAnnotationSet));
+                }
+
+                VendorAtom atom = {
+                    .atomId = 104999,
+                    .values = values,
+                    .atomAnnotations =
+                        std::make_optional<std::vector<std::optional<Annotation>>>(atomAnnotations),
+                    .valuesAnnotations =
+                        std::make_optional<std::vector<std::optional<AnnotationSet>>>(
+                            valuesAnnotations)};
                 const ndk::ScopedAStatus ret = service->reportVendorAtom(atom);
                 if (!ret.isOk()) {
                     std::cout << "reportVendorAtom failed: " << ret.getServiceSpecificError()
