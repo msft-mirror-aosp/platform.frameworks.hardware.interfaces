@@ -48,6 +48,16 @@ oneway interface ICameraDeviceCallback {
     void onDeviceIdle();
 
     /**
+     *  Callback called when the surfaces corresponding to the stream with stream id 'streamId'
+     *  have been prepared.
+     *
+     *  This callback will only be called as a response to the ICameraDeviceUser.prepare() call.
+     *
+     *  @param streamId the stream id of the stream on which ICameraDeviceUser.prepare() was called.
+     */
+    void onPrepared(in int streamId);
+
+    /**
      * Repeating request encountered an error and was stopped.
      *
      * @param lastFrameNumber Frame number of the last frame of the streaming
