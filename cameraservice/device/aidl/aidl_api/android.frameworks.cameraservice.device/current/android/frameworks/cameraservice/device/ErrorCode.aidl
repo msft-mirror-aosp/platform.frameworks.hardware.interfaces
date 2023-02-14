@@ -34,7 +34,7 @@
 package android.frameworks.cameraservice.device;
 @Backing(type="int") @VintfStability
 enum ErrorCode {
-  CAMERA_INVALID_ERROR = -1,
+  CAMERA_INVALID_ERROR = (-1) /* -1 */,
   CAMERA_DISCONNECTED = 0,
   CAMERA_DEVICE = 1,
   CAMERA_SERVICE = 2,
