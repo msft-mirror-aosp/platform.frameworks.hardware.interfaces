@@ -37,4 +37,6 @@ parcelable VendorAtom {
   String reverseDomainName;
   int atomId;
   android.frameworks.stats.VendorAtomValue[] values;
+  @nullable android.frameworks.stats.AnnotationSet[] valuesAnnotations;
+  @nullable android.frameworks.stats.Annotation[] atomAnnotations;
 }

@@ -38,5 +38,5 @@ interface ICameraDeviceCallback {
   oneway void onDeviceError(in android.frameworks.cameraservice.device.ErrorCode errorCode, in android.frameworks.cameraservice.device.CaptureResultExtras resultExtras);
   oneway void onDeviceIdle();
   oneway void onRepeatingRequestError(in long lastFrameNumber, in int repeatingRequestId);
-  void onResultReceived(in android.frameworks.cameraservice.device.CaptureMetadataInfo result, in android.frameworks.cameraservice.device.CaptureResultExtras resultExtras, in android.frameworks.cameraservice.device.PhysicalCaptureResultInfo[] physicalCaptureResultInfos);
+  oneway void onResultReceived(in android.frameworks.cameraservice.device.CaptureMetadataInfo result, in android.frameworks.cameraservice.device.CaptureResultExtras resultExtras, in android.frameworks.cameraservice.device.PhysicalCaptureResultInfo[] physicalCaptureResultInfos);
 }
