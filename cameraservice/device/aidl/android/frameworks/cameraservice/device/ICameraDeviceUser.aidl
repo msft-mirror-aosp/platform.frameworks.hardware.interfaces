@@ -176,6 +176,47 @@ interface ICameraDeviceUser {
     boolean isSessionConfigurationSupported(in SessionConfiguration sessionConfiguration);
 
     /**
+     *
+     * <p>Pre-allocate buffers for a stream.</p>
+     *
+     * <p>Normally, the image buffers for a given stream are allocated on-demand,
+     * to minimize startup latency and memory overhead.</p>
+     *
+     * <p>However, in some cases, it may be desirable for the buffers to be allocated before
+     * any requests targeting the window are actually submitted to the device. Large buffers
+     * may take some time to allocate, which can result in delays in submitting requests until
+     * sufficient buffers are allocated to reach steady-state behavior. Such delays can cause
+     * bursts to take longer than desired, or cause skips or stutters in preview output.</p>
+     *
+     * <p>The prepare() call can be used by clients to perform this pre-allocation.
+     * It may only be called for a given output stream before that stream is used as a target for a
+     * request. The number of buffers allocated is the sum of the count needed by the consumer
+     * providing the output stream, and the maximum number needed by the camera device to fill its
+     * pipeline.
+     * Since this may be a larger number than what is actually required for steady-state operation,
+     * using this call may result in higher memory consumption than the normal on-demand behavior
+     * results in. This method will also delay the time to first output to a given stream,
+     * in exchange for smoother frame rate once the allocation is complete.</p>
+     *
+     * <p>For example, a client that creates an
+     * {@link AImageReader} with a maxImages argument of 10,
+     * but only uses 3 simultaneous {@link AImage}s at once, would normally only cause those 3
+     * images to be allocated (plus what is needed by the camera device for smooth operation).
+     * But using prepare() on the {@link AImageReader}'s window will result in all 10
+     * {@link AImage}s being allocated. So clients using this method should exercise caution
+     * while using this call.</p>
+     *
+     * <p>Once allocation is complete, ICameraDeviceCallback.onPrepared
+     * will be invoked with the stream provided to this method. Between the prepare call and the
+     * ICameraDeviceCallback.onPrepared() call, the output provided to prepare must not be used as
+     * a target of a capture qequest submitted
+     * to this session.</p>
+     *
+     * @param streamId the stream id of the stream for which buffer pre-allocation is to be done.
+     */
+    void prepare(in int streamId);
+
+    /**
      * Submit a list of capture requests.
      *
      * Note: Clients must call submitRequestList() serially if they opt
