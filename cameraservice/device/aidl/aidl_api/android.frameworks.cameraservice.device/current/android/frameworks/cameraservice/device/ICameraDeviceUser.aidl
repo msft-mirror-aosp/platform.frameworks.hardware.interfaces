@@ -45,6 +45,7 @@ interface ICameraDeviceUser {
   android.hardware.common.fmq.MQDescriptor<byte,android.hardware.common.fmq.SynchronizedReadWrite> getCaptureRequestMetadataQueue();
   android.hardware.common.fmq.MQDescriptor<byte,android.hardware.common.fmq.SynchronizedReadWrite> getCaptureResultMetadataQueue();
   boolean isSessionConfigurationSupported(in android.frameworks.cameraservice.device.SessionConfiguration sessionConfiguration);
+  void prepare(in int streamId);
   android.frameworks.cameraservice.device.SubmitInfo submitRequestList(in android.frameworks.cameraservice.device.CaptureRequest[] requestList, in boolean isRepeating);
   void updateOutputConfiguration(in int streamId, in android.frameworks.cameraservice.device.OutputConfiguration outputConfiguration);
   void waitUntilIdle();
