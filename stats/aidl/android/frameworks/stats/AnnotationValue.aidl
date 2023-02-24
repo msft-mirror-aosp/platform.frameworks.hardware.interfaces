@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2021 The Android Open Source Project
+// Copyright (C) 2023 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,16 +19,7 @@ package android.frameworks.stats;
  * Supported field types for this struct.
  */
 @VintfStability
-union VendorAtomValue {
+union AnnotationValue {
     int intValue;
-    long longValue;
-    float floatValue;
-    String stringValue;
     boolean boolValue;
-    @nullable int[] repeatedIntValue;
-    @nullable long[] repeatedLongValue;
-    @nullable float[] repeatedFloatValue;
-    @nullable String[] repeatedStringValue;
-    @nullable boolean[] repeatedBoolValue;
-    @nullable byte[] byteArrayValue;
 }

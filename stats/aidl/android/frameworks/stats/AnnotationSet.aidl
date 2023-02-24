@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2021 The Android Open Source Project
+// Copyright (C) 2023 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,20 +15,20 @@
 //
 package android.frameworks.stats;
 
+import android.frameworks.stats.Annotation;
+
 /*
- * Supported field types for this struct.
+ * Single VendorAtomValue could have multiple annotations associated with it
  */
 @VintfStability
-union VendorAtomValue {
-    int intValue;
-    long longValue;
-    float floatValue;
-    String stringValue;
-    boolean boolValue;
-    @nullable int[] repeatedIntValue;
-    @nullable long[] repeatedLongValue;
-    @nullable float[] repeatedFloatValue;
-    @nullable String[] repeatedStringValue;
-    @nullable boolean[] repeatedBoolValue;
-    @nullable byte[] byteArrayValue;
+parcelable AnnotationSet {
+    /*
+     * Index to map VendorAtomValueAnnotation array with an individual VendorAtomValue
+     * from VendorAtom.values
+     */
+    int valueIndex;
+    /*
+     * Vector of annotations associated with VendorAtom.values[valueIndex]
+     */
+    Annotation[] annotations;
 }

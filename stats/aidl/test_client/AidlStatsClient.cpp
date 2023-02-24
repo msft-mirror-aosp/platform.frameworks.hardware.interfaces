@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 #include <aidl/android/frameworks/stats/IStats.h>
-
 #include <android/binder_manager.h>
-
+#include <getopt.h>
 #include <statslog.h>
 
-#include <getopt.h>
 #include <iostream>
 
-using aidl::android::frameworks::stats::IStats;
-using aidl::android::frameworks::stats::VendorAtom;
-using aidl::android::frameworks::stats::VendorAtomValue;
+using namespace aidl::android::frameworks::stats;
 
 void expect_message(int32_t action) {
     std::cout << "expect the following log in logcat:\n";
@@ -79,8 +75,77 @@ int main(int argc, char* argv[]) {
                 values.push_back(tmp);
                 tmp.set<VendorAtomValue::intValue>(3);
                 values.push_back(tmp);
+                tmp.set<VendorAtomValue::boolValue>(true);
+                values.push_back(tmp);
+                tmp.set<VendorAtomValue::boolValue>(false);
+                values.push_back(tmp);
+                std::vector<int> emptyRepeatedIntValue = {};
+                tmp.set<VendorAtomValue::repeatedIntValue>(emptyRepeatedIntValue);
+                values.push_back(tmp);
+                std::vector<int> repeatedIntValue = {3, 1, 2};
+                tmp.set<VendorAtomValue::repeatedIntValue>(repeatedIntValue);
+                values.push_back(tmp);
+                std::vector<int64_t> repeatedLongValue = {500000, 430000, 1000001};
+                tmp.set<VendorAtomValue::repeatedLongValue>(repeatedLongValue);
+                values.push_back(tmp);
+                std::vector<float> repeatedFloatValue = {1.5, 2.3, 7.9};
+                tmp.set<VendorAtomValue::repeatedFloatValue>(repeatedFloatValue);
+                values.push_back(tmp);
+                std::vector<std::optional<std::string>> repeatedStringValue = {"str1", "str2",
+                                                                               "str3"};
+                tmp.set<VendorAtomValue::repeatedStringValue>(repeatedStringValue);
+                values.push_back(tmp);
+                std::vector<bool> repeatedBoolValue = {true, false, true};
+                tmp.set<VendorAtomValue::repeatedBoolValue>(repeatedBoolValue);
+                values.push_back(tmp);
+                std::vector<uint8_t> byteArrayValue = {21, 50, 3};
+                tmp.set<VendorAtomValue::byteArrayValue>(byteArrayValue);
+                values.push_back(tmp);
+
+                // example of atom level annotation
+                Annotation atomAnnotation{AnnotationId::TRUNCATE_TIMESTAMP, true};
+                std::vector<std::optional<Annotation>> atomAnnotations;
+                atomAnnotations.push_back(std::make_optional<Annotation>(atomAnnotation));
+
+                // values annotation
+                std::vector<std::optional<AnnotationSet>> valuesAnnotations;
+                {
+                    AnnotationSet valueAnnotationSet;
+                    valueAnnotationSet.valueIndex = 0;
+                    valueAnnotationSet.annotations.push_back(
+                        Annotation{AnnotationId::PRIMARY_FIELD, true});
+                    valuesAnnotations.push_back(
+                        std::make_optional<AnnotationSet>(valueAnnotationSet));
+                }
+                {
+                    AnnotationSet valueAnnotationSet;
+                    valueAnnotationSet.valueIndex = 1;
+                    valueAnnotationSet.annotations.push_back(
+                        Annotation{AnnotationId::IS_UID, true});
+                    valuesAnnotations.push_back(
+                        std::make_optional<AnnotationSet>(valueAnnotationSet));
+                }
+                {
+                    AnnotationSet valueAnnotationSet;
+                    valueAnnotationSet.valueIndex = 4;
+                    valueAnnotationSet.annotations.push_back(
+                        Annotation{AnnotationId::EXCLUSIVE_STATE, true});
+                    valueAnnotationSet.annotations.push_back(
+                        Annotation{AnnotationId::STATE_NESTED, true});
+                    valueAnnotationSet.annotations.push_back(
+                        Annotation{AnnotationId::TRIGGER_STATE_RESET, 0});
+                    valuesAnnotations.push_back(
+                        std::make_optional<AnnotationSet>(valueAnnotationSet));
+                }
+
                 VendorAtom atom = {
-                    .reverseDomainName = "", .atomId = 100001, .values = values};
+                    .atomId = 104999,
+                    .values = values,
+                    .atomAnnotations =
+                        std::make_optional<std::vector<std::optional<Annotation>>>(atomAnnotations),
+                    .valuesAnnotations =
+                        std::make_optional<std::vector<std::optional<AnnotationSet>>>(
+                            valuesAnnotations)};
                 const ndk::ScopedAStatus ret = service->reportVendorAtom(atom);
                 if (!ret.isOk()) {
                     std::cout << "reportVendorAtom failed: " << ret.getServiceSpecificError()

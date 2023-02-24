@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2021 The Android Open Source Project
+// Copyright (C) 2022 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,28 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// This client can be installed on the device to test accesses of the AIDL service as
-// it would be called from other clients.
-// To install copy binary to /data/local/tmp
-//
-// Supported command line arguments:
-//     -h or --help - shows help information
-//     -v or --VendorAtom - tests report reportVendorAtom API
 
 package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-cc_binary {
-    name: "aidl_stats_client",
-    srcs: [
-        "AidlStatsClient.cpp",
+android_test {
+    name: "VtsVendorAtomJavaTest",
+    test_suites: ["device-tests"],
+    srcs: ["VtsVendorAtomJavaTest.java"],
+    static_libs: [
+        "junit",
+        "android.frameworks.stats-V2-java",
+        "compatibility-device-util-axt",
     ],
-    shared_libs: [
-        "android.frameworks.stats-V2-ndk",
-        "libbase",
-        "libbinder_ndk",
-        "libutils",
-        "libstatslog",
+    libs: [
+        "android.test.runner",
     ],
 }
