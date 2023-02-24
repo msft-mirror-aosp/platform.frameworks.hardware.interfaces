@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.vts.istats.vendoratom;
+package android.test.stats;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -60,77 +60,65 @@ public class VtsVendorAtomJavaTest {
         } catch (NullPointerException e) {
             Log.e(TAG, "Failed to connect to IStats service", e);
         }
-        Log.i(TAG, "Setup done");
-    }
-
-    @Test
-    public void testIStatsPresent() {
-        assertTrue(statsService.isPresent());
     }
 
     /*
-     * Test IStats::reportVendorAtom with int field
+     * Test IStats::reportVendorAtom with all VendorAtomValue types, including empty string in
+     * repeated string array and empty int array.
      */
     @Test
-    public void testReportVendorAtomInt() {
+    public void testReportVendorAtom() {
         VendorAtom atom = new VendorAtom();
-        atom.atomId = 105048;
-        atom.reverseDomainName = "com.test.domain";
-        atom.values = new VendorAtomValue[1];
-        atom.values[0] = VendorAtomValue.intValue(7);
+        atom.reverseDomainName = "";
+        atom.atomId = 104999;
+        atom.values = new VendorAtomValue[12];
 
-        try {
-            statsService.get().reportVendorAtom(atom);
-        } catch (NoSuchElementException e) {
-            Log.e(TAG, "Failed to get IStats service", e);
-            fail();
-        } catch (RemoteException e) {
-            Log.e(TAG, "Failed to log atom to IStats service", e);
-            fail();
-        }
-    }
-
-    /*
-     * Test IStats::reportVendorAtom with wrong atom code - this event will be dropped.
-     */
-    @Test
-    public void testReportVendorAtomWrongId() {
-        VendorAtom atom = new VendorAtom();
-        atom.atomId = 1000;
-        atom.reverseDomainName = "com.test.domain";
-        atom.values = new VendorAtomValue[1];
         atom.values[0] = VendorAtomValue.intValue(7);
-        try {
-            statsService.get().reportVendorAtom(atom);
-        } catch (NoSuchElementException e) {
-            Log.e(TAG, "Failed to get IStats service", e);
-            fail();
-        } catch (RemoteException e) {
-            Log.e(TAG, "Failed to log atom to IStats service", e);
-            fail();
-        }
-    }
-
-    /*
-     * Test IStats::reportVendorAtom with repeated fields.
-     */
-    @Test
-    public void testReportVendorAtomRepeated() {
-        VendorAtom atom = new VendorAtom();
-        atom.atomId = 105048;
-        atom.reverseDomainName = "com.test.domain";
-        atom.values = new VendorAtomValue[10];
-        atom.values[0] = VendorAtomValue.intValue(7);
-        atom.values[1] = VendorAtomValue.longValue(70000L);
-        atom.values[2] = VendorAtomValue.floatValue(8.5f);
-        atom.values[3] = VendorAtomValue.stringValue("testString");
+        atom.values[1] = VendorAtomValue.longValue(70000);
+        atom.values[2] = VendorAtomValue.floatValue((float) 8.5);
+        atom.values[3] = VendorAtomValue.stringValue("test");
         atom.values[4] = VendorAtomValue.boolValue(true);
-        atom.values[5] = VendorAtomValue.repeatedIntValue(new int[] {11, 12, 13});
-        atom.values[6] = VendorAtomValue.repeatedLongValue(new long[] {11000L, 12000L, 13000L});
-        atom.values[7] = VendorAtomValue.repeatedFloatValue(new float[] {0.1f, 0.2f, 0.3f});
-        atom.values[8] = VendorAtomValue.repeatedStringValue(new String[] {"abc", "def", "xyz"});
-        atom.values[9] =
-            VendorAtomValue.repeatedBoolValue(new boolean[] {true, false, false, true});
+        atom.values[5] = VendorAtomValue.repeatedIntValue(new int[] {1, 2});
+        atom.values[6] = VendorAtomValue.repeatedLongValue(new long[] {430000, 500000, 1000001});
+        atom.values[7] =
+            VendorAtomValue.repeatedFloatValue(new float[] {(float) 7.9, (float) 1.2, (float) 5.4});
+        atom.values[8] =
+            VendorAtomValue.repeatedStringValue(new java.lang.String[] {"test1", "", "test2"});
+        atom.values[9] = VendorAtomValue.repeatedIntValue(new int[] {});
+        atom.values[10] = VendorAtomValue.repeatedBoolValue(new boolean[] {false, true});
+        atom.values[11] = VendorAtomValue.byteArrayValue(new byte[] {5, 10, 21});
+
+        try {
+            statsService.get().reportVendorAtom(atom);
+        } catch (NoSuchElementException e) {
+            Log.e(TAG, "Failed to get IStats service", e);
+            fail();
+        } catch (RemoteException e) {
+            Log.e(TAG, "Failed to log atom to IStats service", e);
+            fail();
+        }
+    }
+
+    /*
+     * Test IStats::reportVendorAtom with null fields.
+     */
+    @Test
+    public void testReportVendorAtomNull() {
+        VendorAtom atom = new VendorAtom();
+        atom.reverseDomainName = "";
+        atom.atomId = 104999;
+        atom.values = new VendorAtomValue[9];
+
+        atom.values[0] = VendorAtomValue.intValue(8);
+        atom.values[1] = VendorAtomValue.repeatedIntValue(null);
+        atom.values[2] = VendorAtomValue.repeatedLongValue(null);
+        atom.values[3] = VendorAtomValue.repeatedFloatValue(null);
+        atom.values[4] = VendorAtomValue.repeatedStringValue(null);
+        atom.values[5] =
+            VendorAtomValue.repeatedStringValue(new java.lang.String[] {null, "test2", null});
+        atom.values[6] = VendorAtomValue.repeatedBoolValue(null);
+        atom.values[7] = VendorAtomValue.byteArrayValue(null);
+        atom.values[8] = VendorAtomValue.stringValue("test");
 
         try {
             statsService.get().reportVendorAtom(atom);
