@@ -31,6 +31,9 @@ interface ICameraDeviceUser {
 
     /**
      * Begin device configuration.
+     *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      */
     void beginConfigure();
 
@@ -56,6 +59,8 @@ interface ICameraDeviceUser {
      *
      * @param templateId the type of capture request to be created.
      *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      * @return the settings metadata of the request.
      */
     CameraMetadata createDefaultRequest(in TemplateId templateId);
@@ -68,6 +73,9 @@ interface ICameraDeviceUser {
      *
      * @param outputConfiguration size, format, and other parameters for the
      *        stream
+     *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      * @return stream ID of the new stream generated.
      */
     int createStream(in OutputConfiguration outputConfiguration);
@@ -78,6 +86,8 @@ interface ICameraDeviceUser {
      * Note: deleteStream() must only be called within a beginConfigure() and an
      *       endConfigure() block.
      *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      * @param streamId the stream id of the stream to be deleted
      */
     void deleteStream(in int streamId);
@@ -103,12 +113,17 @@ interface ICameraDeviceUser {
      *        parameters are legal inputs.
      * @param startTimeNs indicate the timestamp when session configuration
      *        starts.
+     *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      */
     void endConfigure(in StreamConfigurationMode operatingMode, in CameraMetadata sessionParams, in long startTimeNs);
 
     /**
      * flush all the requests pending on the device.
      *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      * @return the frame number of the last frame flushed.
      */
     long flush();
@@ -153,10 +168,53 @@ interface ICameraDeviceUser {
      *
      * @param sessionConfiguration Specific session configuration to be verified.
      *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      * @return true  - in case the stream combination is supported.
      *         false - in case there is no device support.
      */
     boolean isSessionConfigurationSupported(in SessionConfiguration sessionConfiguration);
+
+    /**
+     *
+     * <p>Pre-allocate buffers for a stream.</p>
+     *
+     * <p>Normally, the image buffers for a given stream are allocated on-demand,
+     * to minimize startup latency and memory overhead.</p>
+     *
+     * <p>However, in some cases, it may be desirable for the buffers to be allocated before
+     * any requests targeting the window are actually submitted to the device. Large buffers
+     * may take some time to allocate, which can result in delays in submitting requests until
+     * sufficient buffers are allocated to reach steady-state behavior. Such delays can cause
+     * bursts to take longer than desired, or cause skips or stutters in preview output.</p>
+     *
+     * <p>The prepare() call can be used by clients to perform this pre-allocation.
+     * It may only be called for a given output stream before that stream is used as a target for a
+     * request. The number of buffers allocated is the sum of the count needed by the consumer
+     * providing the output stream, and the maximum number needed by the camera device to fill its
+     * pipeline.
+     * Since this may be a larger number than what is actually required for steady-state operation,
+     * using this call may result in higher memory consumption than the normal on-demand behavior
+     * results in. This method will also delay the time to first output to a given stream,
+     * in exchange for smoother frame rate once the allocation is complete.</p>
+     *
+     * <p>For example, a client that creates an
+     * {@link AImageReader} with a maxImages argument of 10,
+     * but only uses 3 simultaneous {@link AImage}s at once, would normally only cause those 3
+     * images to be allocated (plus what is needed by the camera device for smooth operation).
+     * But using prepare() on the {@link AImageReader}'s window will result in all 10
+     * {@link AImage}s being allocated. So clients using this method should exercise caution
+     * while using this call.</p>
+     *
+     * <p>Once allocation is complete, ICameraDeviceCallback.onPrepared
+     * will be invoked with the stream provided to this method. Between the prepare call and the
+     * ICameraDeviceCallback.onPrepared() call, the output provided to prepare must not be used as
+     * a target of a capture qequest submitted
+     * to this session.</p>
+     *
+     * @param streamId the stream id of the stream for which buffer pre-allocation is to be done.
+     */
+    void prepare(in int streamId);
 
     /**
      * Submit a list of capture requests.
@@ -168,6 +226,8 @@ interface ICameraDeviceUser {
      * @param requestList The list of CaptureRequests
      * @param isRepeating Whether the set of requests repeats indefinitely.
      *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      * @return SubmitInfo data structure containing the request id of the
      *         capture request and the frame number of the last frame that will
      *         be produced(In case the request is not repeating. Otherwise it
@@ -188,6 +248,8 @@ interface ICameraDeviceUser {
      *        updated.
      * @param outputConfiguration the new outputConfiguration.
      *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      */
     void updateOutputConfiguration(in int streamId, in OutputConfiguration outputConfiguration);
 

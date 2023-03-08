@@ -34,8 +34,8 @@
 package android.frameworks.cameraservice.service;
 @Backing(type="int") @VintfStability
 enum CameraDeviceStatus {
-  STATUS_NOT_AVAILABLE = -2,
-  STATUS_UNKNOWN = -1,
+  STATUS_NOT_AVAILABLE = (-2) /* -2 */,
+  STATUS_UNKNOWN = (-1) /* -1 */,
   STATUS_NOT_PRESENT = 0,
   STATUS_PRESENT = 1,
   STATUS_ENUMERATING = 2,

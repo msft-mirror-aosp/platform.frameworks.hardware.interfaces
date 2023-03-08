@@ -44,6 +44,8 @@ interface ICameraService {
      *        call callbacks on this interface when a camera device's status
      *        changes.
      *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      * @return a list of CameraStatusAndIds which stores the deviceIds,
      *         their corresponding statuses, and the unavailable physical camera Ids
      *         if the device is a logical multi-camera.
@@ -63,6 +65,8 @@ interface ICameraService {
      *        etc.
      * @param cameraId the cameraId of the camera device to connect to.
      *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      * @return ICameraDeviceUser interface to the camera device requested.
      */
     ICameraDeviceUser connectDevice(in ICameraDeviceCallback callback,
@@ -73,6 +77,9 @@ interface ICameraService {
      *
      * @param cameraId the camera id of the camera device, whose metadata is
      *        being requested.
+     *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      * @return the static metadata of the camera device requested.
      */
     CameraMetadata getCameraCharacteristics(in String cameraId);
@@ -85,6 +92,8 @@ interface ICameraService {
      * Note: VendorTag caches may be created in process, by clients. An AIDL api
      *       is not provided for this.
      *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      * @return the list of provider ids and corresponding vendor tag sections.
      */
     ProviderIdAndVendorTagSections[] getCameraVendorTagSections();
@@ -94,6 +103,9 @@ interface ICameraService {
      *
      * @param listener the listener to be removed from receiving callbacks on
      *        changes to device state.
+     *
+     * @throws ServiceSpecificException on failure with error code set to Status corresponding to
+     *         the specific failure.
      */
     void removeListener(in ICameraServiceListener listener);
 }
