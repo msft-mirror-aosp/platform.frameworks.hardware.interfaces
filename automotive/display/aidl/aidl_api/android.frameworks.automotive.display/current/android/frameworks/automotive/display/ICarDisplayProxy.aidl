@@ -36,7 +36,11 @@ package android.frameworks.automotive.display;
 interface ICarDisplayProxy {
   long[] getDisplayIdList();
   android.frameworks.automotive.display.DisplayDesc getDisplayInfo(in long id);
+  /**
+   * @deprecated As of android.frameworks.automotive.display-V2, this method is deprecated and replaced with getSurface().
+   */
   android.hardware.common.NativeHandle getHGraphicBufferProducer(in long id);
   void hideWindow(in long id);
   void showWindow(in long id);
+  android.view.Surface getSurface(in long id);
 }
