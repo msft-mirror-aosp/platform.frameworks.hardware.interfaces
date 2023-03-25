@@ -48,5 +48,5 @@ aidl_interface {
             imports: ["android.hardware.common-V2"],
         },
     ],
-
+    system_ext_specific: true,
 }
