@@ -12,7 +12,7 @@ aidl_interface {
         "android.hardware.common.fmq-V1",
         "android.hardware.common-V2",
     ],
-    frozen: false,
+    frozen: true,
     backend: {
         cpp: {
             enabled: false,
@@ -27,4 +27,15 @@ aidl_interface {
         },
     },
     vndk_use_version: "1",
+    versions_with_info: [
+        {
+            version: "1",
+            imports: [
+                "android.frameworks.cameraservice.common-V1",
+                "android.hardware.common.fmq-V1",
+                "android.hardware.common-V2",
+            ],
+        },
+    ],
+
 }
