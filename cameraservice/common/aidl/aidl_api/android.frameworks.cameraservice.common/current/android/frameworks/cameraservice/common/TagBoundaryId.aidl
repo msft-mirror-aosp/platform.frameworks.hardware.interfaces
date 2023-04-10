@@ -34,6 +34,6 @@
 package android.frameworks.cameraservice.common;
 @Backing(type="long") @VintfStability
 enum TagBoundaryId {
-  AOSP = 0,
-  VENDOR = 2147483648,
+  AOSP = 0x0,
+  VENDOR = 0x80000000L,
 }

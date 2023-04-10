@@ -19,7 +19,7 @@ package android.frameworks.cameraservice.service;
 import android.frameworks.cameraservice.service.CameraDeviceStatus;
 
 @VintfStability
-interface ICameraServiceListener {
+oneway interface ICameraServiceListener {
     /**
      * Callback called by cameraservice when the status of a physical
      * camera device backing a logical camera changes
@@ -30,7 +30,7 @@ interface ICameraServiceListener {
      * @param physicalCameraId the physical camera device whose status
      *      change is being reported
      */
-    oneway void onPhysicalCameraStatusChanged(in CameraDeviceStatus status, in String cameraId,
+    void onPhysicalCameraStatusChanged(in CameraDeviceStatus status, in String cameraId,
         in String physicalCameraId);
 
     /**
@@ -40,5 +40,5 @@ interface ICameraServiceListener {
      * @param status the current device status
      * @param cameraId the camera device whose status change is being reported
      */
-    oneway void onStatusChanged(in CameraDeviceStatus status, in String cameraId);
+    void onStatusChanged(in CameraDeviceStatus status, in String cameraId);
 }

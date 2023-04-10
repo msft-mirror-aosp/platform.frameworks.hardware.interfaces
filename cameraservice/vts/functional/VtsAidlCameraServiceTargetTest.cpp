@@ -45,6 +45,7 @@
 
 #include <algorithm>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -143,8 +144,11 @@ class CameraDeviceCallback : public BnCameraDeviceCallback {
     bool mError = false;
     LocalCameraDeviceStatus mLastStatus = UNINITIALIZED;
     mutable std::vector<LocalCameraDeviceStatus> mStatusesHit;
+    // stream id -> prepared count;
+    mutable std::unordered_map<int, int> mStreamsPreparedCount;
     mutable Mutex mLock;
     mutable Condition mStatusCondition;
+    mutable Condition mPreparedCondition;
 
    public:
     CameraDeviceCallback() {}
@@ -194,6 +198,32 @@ class CameraDeviceCallback : public BnCameraDeviceCallback {
         mStatusesHit.push_back(mLastStatus);
         mStatusCondition.broadcast();
         return ndk::ScopedAStatus::ok();
+    }
+
+    ndk::ScopedAStatus onPrepared(int32_t streamId) override {
+        Mutex::Autolock l(mLock);
+        if (mStreamsPreparedCount.find(streamId) == mStreamsPreparedCount.end()) {
+            mStreamsPreparedCount[streamId] = 0;
+        }
+        mStreamsPreparedCount[streamId]++;
+        mPreparedCondition.broadcast();
+        return ndk::ScopedAStatus::ok();
+    }
+
+    bool waitForPreparedCount(int streamId, int count) const {
+        Mutex::Autolock l(mLock);
+        if ((mStreamsPreparedCount.find(streamId) != mStreamsPreparedCount.end()) &&
+            (mStreamsPreparedCount[streamId] == count)) {
+            return true;
+        }
+
+        while ((mStreamsPreparedCount.find(streamId) == mStreamsPreparedCount.end()) ||
+               (mStreamsPreparedCount[streamId] < count)) {
+            if (mPreparedCondition.waitRelative(mLock, IDLE_TIMEOUT) != android::OK) {
+                return false;
+            }
+        }
+        return (mStreamsPreparedCount[streamId] == count);
     }
 
     // Test helper functions:
@@ -331,164 +361,179 @@ class VtsAidlCameraServiceTargetTest : public ::testing::TestWithParam<std::stri
         }
         return streamConfig;
     }
+    void BasicCameraTests(bool prepareWindows) {
+        std::shared_ptr<CameraServiceListener> listener =
+            ::ndk::SharedRefBase::make<CameraServiceListener>();
+        std::vector<CameraStatusAndId> cameraStatuses;
+
+        ndk::ScopedAStatus ret = mCameraService->addListener(listener, &cameraStatuses);
+        EXPECT_TRUE(ret.isOk());
+
+        for (const auto& it : cameraStatuses) {
+            CameraMetadata rawMetadata;
+            if (it.deviceStatus != CameraDeviceStatus::STATUS_PRESENT) {
+                continue;
+            }
+            AidlCameraMetadata aidlMetadata;
+            ret = mCameraService->getCameraCharacteristics(it.cameraId, &aidlMetadata);
+            EXPECT_TRUE(ret.isOk());
+            bool cStatus = convertFromAidlCloned(aidlMetadata, &rawMetadata);
+            EXPECT_TRUE(cStatus);
+            EXPECT_FALSE(rawMetadata.isEmpty());
+
+            std::shared_ptr<CameraDeviceCallback> callbacks =
+                ndk::SharedRefBase::make<CameraDeviceCallback>();
+            std::shared_ptr<ICameraDeviceUser> deviceRemote = nullptr;
+            ret = mCameraService->connectDevice(callbacks, it.cameraId, &deviceRemote);
+            EXPECT_TRUE(ret.isOk());
+            EXPECT_TRUE(deviceRemote != nullptr);
+
+            MQDescriptor<int8_t, SynchronizedReadWrite> mqDesc;
+            ret = deviceRemote->getCaptureRequestMetadataQueue(&mqDesc);
+            EXPECT_TRUE(ret.isOk());
+            std::shared_ptr<RequestMetadataQueue> requestMQ =
+                std::make_shared<RequestMetadataQueue>(mqDesc);
+            EXPECT_TRUE(requestMQ->isValid());
+            EXPECT_TRUE((requestMQ->availableToWrite() >= 0));
+
+            AImageReader* reader = nullptr;
+            bool isDepthOnlyDevice =
+                !doesCapabilityExist(rawMetadata,
+                                     ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE) &&
+                doesCapabilityExist(rawMetadata,
+                                    ANDROID_REQUEST_AVAILABLE_CAPABILITIES_DEPTH_OUTPUT);
+            int chosenImageFormat = AIMAGE_FORMAT_YUV_420_888;
+            int chosenImageWidth = kVGAImageWidth;
+            int chosenImageHeight = kVGAImageHeight;
+            bool isSecureOnlyCamera = isSecureOnlyDevice(rawMetadata);
+            status_t mStatus = OK;
+            if (isSecureOnlyCamera) {
+                StreamConfiguration secureStreamConfig = getStreamConfiguration(
+                    rawMetadata, ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
+                    ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT,
+                    HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED);
+                EXPECT_TRUE(secureStreamConfig.width != -1);
+                EXPECT_TRUE(secureStreamConfig.height != -1);
+                chosenImageFormat = AIMAGE_FORMAT_PRIVATE;
+                chosenImageWidth = secureStreamConfig.width;
+                chosenImageHeight = secureStreamConfig.height;
+                mStatus = AImageReader_newWithUsage(
+                    chosenImageWidth, chosenImageHeight, chosenImageFormat,
+                    AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT, kCaptureRequestCount, &reader);
+
+            } else {
+                if (isDepthOnlyDevice) {
+                    StreamConfiguration depthStreamConfig = getStreamConfiguration(
+                        rawMetadata, ANDROID_DEPTH_AVAILABLE_DEPTH_STREAM_CONFIGURATIONS,
+                        ANDROID_DEPTH_AVAILABLE_DEPTH_STREAM_CONFIGURATIONS_OUTPUT,
+                        HAL_PIXEL_FORMAT_Y16);
+                    EXPECT_TRUE(depthStreamConfig.width != -1);
+                    EXPECT_TRUE(depthStreamConfig.height != -1);
+                    chosenImageFormat = AIMAGE_FORMAT_DEPTH16;
+                    chosenImageWidth = depthStreamConfig.width;
+                    chosenImageHeight = depthStreamConfig.height;
+                }
+                mStatus = AImageReader_new(chosenImageWidth, chosenImageHeight, chosenImageFormat,
+                                           kCaptureRequestCount, &reader);
+            }
+
+            EXPECT_EQ(mStatus, AMEDIA_OK);
+            native_handle_t* wh = nullptr;
+            mStatus = AImageReader_getWindowNativeHandle(reader, &wh);
+            EXPECT_TRUE(mStatus == AMEDIA_OK && wh != nullptr);
+
+            ret = deviceRemote->beginConfigure();
+            EXPECT_TRUE(ret.isOk());
+
+            OutputConfiguration output = createOutputConfiguration({wh});
+            int32_t streamId = -1;
+            ret = deviceRemote->createStream(output, &streamId);
+            EXPECT_TRUE(ret.isOk());
+            EXPECT_TRUE(streamId >= 0);
+
+            AidlCameraMetadata sessionParams;
+            ret = deviceRemote->endConfigure(StreamConfigurationMode::NORMAL_MODE, sessionParams,
+                                             systemTime());
+            EXPECT_TRUE(ret.isOk());
+
+            if (prepareWindows) {
+                ret = deviceRemote->prepare(streamId);
+                EXPECT_TRUE(ret.isOk());
+                EXPECT_TRUE(callbacks->waitForPreparedCount(streamId, 1));
+
+                ret = deviceRemote->prepare(streamId);
+                // We should get another callback;
+                EXPECT_TRUE(ret.isOk());
+                EXPECT_TRUE(callbacks->waitForPreparedCount(streamId, 2));
+            }
+            AidlCameraMetadata aidlSettingsMetadata;
+            ret = deviceRemote->createDefaultRequest(TemplateId::PREVIEW, &aidlSettingsMetadata);
+            EXPECT_TRUE(ret.isOk());
+            EXPECT_GE(aidlSettingsMetadata.metadata.size(), 0);
+            std::vector<CaptureRequest> captureRequests;
+            captureRequests.resize(kNumRequests);
+            for (int i = 0; i < kNumRequests; i++) {
+                CaptureRequest& captureRequest = captureRequests[i];
+                initializeCaptureRequestPartial(&captureRequest, streamId, it.cameraId,
+                                                aidlSettingsMetadata.metadata.size());
+                // Write the settings metadata into the fmq.
+                bool written = requestMQ->write(
+                    reinterpret_cast<int8_t*>(aidlSettingsMetadata.metadata.data()),
+                    aidlSettingsMetadata.metadata.size());
+                EXPECT_TRUE(written);
+            }
+
+            SubmitInfo info;
+            // Test a single capture
+            ret = deviceRemote->submitRequestList(captureRequests, false, &info);
+            EXPECT_TRUE(ret.isOk());
+            EXPECT_GE(info.requestId, 0);
+            EXPECT_TRUE(callbacks->waitForStatus(
+                CameraDeviceCallback::LocalCameraDeviceStatus::RESULT_RECEIVED));
+            EXPECT_TRUE(callbacks->waitForIdle());
+
+            // Test repeating requests
+            CaptureRequest captureRequest;
+            initializeCaptureRequestPartial(&captureRequest, streamId, it.cameraId,
+                                            aidlSettingsMetadata.metadata.size());
+
+            bool written =
+                requestMQ->write(reinterpret_cast<int8_t*>(aidlSettingsMetadata.metadata.data()),
+                                 aidlSettingsMetadata.metadata.size());
+            EXPECT_TRUE(written);
+
+            ret = deviceRemote->submitRequestList({captureRequest}, true, &info);
+            EXPECT_TRUE(ret.isOk());
+            EXPECT_TRUE(callbacks->waitForStatus(
+                CameraDeviceCallback::LocalCameraDeviceStatus::RESULT_RECEIVED));
+
+            int64_t lastFrameNumber = -1;
+            ret = deviceRemote->cancelRepeatingRequest(&lastFrameNumber);
+            EXPECT_TRUE(ret.isOk());
+            EXPECT_GE(lastFrameNumber, 0);
+
+            // Test waitUntilIdle()
+            auto statusRet = deviceRemote->waitUntilIdle();
+            EXPECT_TRUE(statusRet.isOk());
+
+            // Test deleteStream()
+            statusRet = deviceRemote->deleteStream(streamId);
+            EXPECT_TRUE(statusRet.isOk());
+
+            ret = deviceRemote->disconnect();
+            EXPECT_TRUE(ret.isOk());
+        }
+        ret = mCameraService->removeListener(listener);
+        EXPECT_TRUE(ret.isOk());
+    }
 
     std::shared_ptr<ICameraService> mCameraService = nullptr;
 };
 
 // Basic AIDL calls for ICameraService
 TEST_P(VtsAidlCameraServiceTargetTest, BasicCameraLifeCycleTest) {
-    std::shared_ptr<CameraServiceListener> listener =
-        ::ndk::SharedRefBase::make<CameraServiceListener>();
-    std::vector<CameraStatusAndId> cameraStatuses;
-
-    ndk::ScopedAStatus ret = mCameraService->addListener(listener, &cameraStatuses);
-    EXPECT_TRUE(ret.isOk());
-
-    for (const auto& it : cameraStatuses) {
-        CameraMetadata rawMetadata;
-        if (it.deviceStatus != CameraDeviceStatus::STATUS_PRESENT) {
-            continue;
-        }
-        AidlCameraMetadata aidlMetadata;
-        ret = mCameraService->getCameraCharacteristics(it.cameraId, &aidlMetadata);
-        EXPECT_TRUE(ret.isOk());
-        bool cStatus = convertFromAidlCloned(aidlMetadata, &rawMetadata);
-        EXPECT_TRUE(cStatus);
-        EXPECT_FALSE(rawMetadata.isEmpty());
-
-        std::shared_ptr<CameraDeviceCallback> callbacks =
-            ndk::SharedRefBase::make<CameraDeviceCallback>();
-        std::shared_ptr<ICameraDeviceUser> deviceRemote = nullptr;
-        ret = mCameraService->connectDevice(callbacks, it.cameraId, &deviceRemote);
-        EXPECT_TRUE(ret.isOk());
-        EXPECT_TRUE(deviceRemote != nullptr);
-
-        MQDescriptor<int8_t, SynchronizedReadWrite> mqDesc;
-        ret = deviceRemote->getCaptureRequestMetadataQueue(&mqDesc);
-        EXPECT_TRUE(ret.isOk());
-        std::shared_ptr<RequestMetadataQueue> requestMQ =
-            std::make_shared<RequestMetadataQueue>(mqDesc);
-        EXPECT_TRUE(requestMQ->isValid());
-        EXPECT_TRUE((requestMQ->availableToWrite() >= 0));
-
-        AImageReader* reader = nullptr;
-        bool isDepthOnlyDevice =
-            !doesCapabilityExist(rawMetadata,
-                                 ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE) &&
-            doesCapabilityExist(rawMetadata, ANDROID_REQUEST_AVAILABLE_CAPABILITIES_DEPTH_OUTPUT);
-        int chosenImageFormat = AIMAGE_FORMAT_YUV_420_888;
-        int chosenImageWidth = kVGAImageWidth;
-        int chosenImageHeight = kVGAImageHeight;
-        bool isSecureOnlyCamera = isSecureOnlyDevice(rawMetadata);
-        status_t mStatus = OK;
-        if (isSecureOnlyCamera) {
-            StreamConfiguration secureStreamConfig =
-                getStreamConfiguration(rawMetadata, ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
-                                       ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT,
-                                       HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED);
-            EXPECT_TRUE(secureStreamConfig.width != -1);
-            EXPECT_TRUE(secureStreamConfig.height != -1);
-            chosenImageFormat = AIMAGE_FORMAT_PRIVATE;
-            chosenImageWidth = secureStreamConfig.width;
-            chosenImageHeight = secureStreamConfig.height;
-            mStatus = AImageReader_newWithUsage(
-                chosenImageWidth, chosenImageHeight, chosenImageFormat,
-                AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT, kCaptureRequestCount, &reader);
-
-        } else {
-            if (isDepthOnlyDevice) {
-                StreamConfiguration depthStreamConfig = getStreamConfiguration(
-                    rawMetadata, ANDROID_DEPTH_AVAILABLE_DEPTH_STREAM_CONFIGURATIONS,
-                    ANDROID_DEPTH_AVAILABLE_DEPTH_STREAM_CONFIGURATIONS_OUTPUT,
-                    HAL_PIXEL_FORMAT_Y16);
-                EXPECT_TRUE(depthStreamConfig.width != -1);
-                EXPECT_TRUE(depthStreamConfig.height != -1);
-                chosenImageFormat = AIMAGE_FORMAT_DEPTH16;
-                chosenImageWidth = depthStreamConfig.width;
-                chosenImageHeight = depthStreamConfig.height;
-            }
-            mStatus = AImageReader_new(chosenImageWidth, chosenImageHeight, chosenImageFormat,
-                                       kCaptureRequestCount, &reader);
-        }
-
-        EXPECT_EQ(mStatus, AMEDIA_OK);
-        native_handle_t* wh = nullptr;
-        mStatus = AImageReader_getWindowNativeHandle(reader, &wh);
-        EXPECT_TRUE(mStatus == AMEDIA_OK && wh != nullptr);
-
-        ret = deviceRemote->beginConfigure();
-        EXPECT_TRUE(ret.isOk());
-
-        OutputConfiguration output = createOutputConfiguration({wh});
-        int32_t streamId = -1;
-        ret = deviceRemote->createStream(output, &streamId);
-        EXPECT_TRUE(ret.isOk());
-        EXPECT_TRUE(streamId >= 0);
-
-        AidlCameraMetadata sessionParams;
-        ret = deviceRemote->endConfigure(StreamConfigurationMode::NORMAL_MODE, sessionParams,
-                                         systemTime());
-        EXPECT_TRUE(ret.isOk());
-
-        AidlCameraMetadata aidlSettingsMetadata;
-        ret = deviceRemote->createDefaultRequest(TemplateId::PREVIEW, &aidlSettingsMetadata);
-        EXPECT_TRUE(ret.isOk());
-        EXPECT_GE(aidlSettingsMetadata.metadata.size(), 0);
-        std::vector<CaptureRequest> captureRequests;
-        captureRequests.resize(kNumRequests);
-        for (int i = 0; i < kNumRequests; i++) {
-            CaptureRequest& captureRequest = captureRequests[i];
-            initializeCaptureRequestPartial(&captureRequest, streamId, it.cameraId,
-                                            aidlSettingsMetadata.metadata.size());
-            // Write the settings metadata into the fmq.
-            bool written =
-                requestMQ->write(reinterpret_cast<int8_t*>(aidlSettingsMetadata.metadata.data()),
-                                 aidlSettingsMetadata.metadata.size());
-            EXPECT_TRUE(written);
-        }
-
-        SubmitInfo info;
-        // Test a single capture
-        ret = deviceRemote->submitRequestList(captureRequests, false, &info);
-        EXPECT_TRUE(ret.isOk());
-        EXPECT_GE(info.requestId, 0);
-        EXPECT_TRUE(callbacks->waitForStatus(
-            CameraDeviceCallback::LocalCameraDeviceStatus::RESULT_RECEIVED));
-        EXPECT_TRUE(callbacks->waitForIdle());
-
-        // Test repeating requests
-        CaptureRequest captureRequest;
-        initializeCaptureRequestPartial(&captureRequest, streamId, it.cameraId,
-                                        aidlSettingsMetadata.metadata.size());
-
-        bool written =
-            requestMQ->write(reinterpret_cast<int8_t*>(aidlSettingsMetadata.metadata.data()),
-                             aidlSettingsMetadata.metadata.size());
-        EXPECT_TRUE(written);
-
-        ret = deviceRemote->submitRequestList({captureRequest}, true, &info);
-        EXPECT_TRUE(ret.isOk());
-        EXPECT_TRUE(callbacks->waitForStatus(
-            CameraDeviceCallback::LocalCameraDeviceStatus::RESULT_RECEIVED));
-
-        int64_t lastFrameNumber = -1;
-        ret = deviceRemote->cancelRepeatingRequest(&lastFrameNumber);
-        EXPECT_TRUE(ret.isOk());
-        EXPECT_GE(lastFrameNumber, 0);
-
-        // Test waitUntilIdle()
-        auto statusRet = deviceRemote->waitUntilIdle();
-        EXPECT_TRUE(statusRet.isOk());
-
-        // Test deleteStream()
-        statusRet = deviceRemote->deleteStream(streamId);
-        EXPECT_TRUE(statusRet.isOk());
-
-        ret = deviceRemote->disconnect();
-        EXPECT_TRUE(ret.isOk());
-    }
-    ret = mCameraService->removeListener(listener);
-    EXPECT_TRUE(ret.isOk());
+    BasicCameraTests(/*prepareWindows*/ false);
+    BasicCameraTests(/*prepareWindows*/ true);
 }
 
 TEST_P(VtsAidlCameraServiceTargetTest, CameraServiceListenerTest) {

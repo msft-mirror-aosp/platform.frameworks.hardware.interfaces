@@ -22,7 +22,7 @@ import android.frameworks.cameraservice.device.CaptureMetadataInfo;
 import android.frameworks.cameraservice.device.PhysicalCaptureResultInfo;
 
 @VintfStability
-interface ICameraDeviceCallback {
+oneway interface ICameraDeviceCallback {
     /**
      *  Callback called when capture starts.
      *
@@ -30,7 +30,7 @@ interface ICameraDeviceCallback {
      *         frame number, request id, etc, of the request.
      *  @param timestamp corresponding to the start (in nanoseconds)
      */
-    oneway void onCaptureStarted(in CaptureResultExtras resultExtras, in long timestamp);
+    void onCaptureStarted(in CaptureResultExtras resultExtras, in long timestamp);
 
     /**
      *  Callback called when the device encounters an error.
@@ -40,12 +40,22 @@ interface ICameraDeviceCallback {
      *         frame number, request id, etc, of the request on which the device
      *         error occurred, in case the errorCode was CAMERA_BUFFER.
      */
-    oneway void onDeviceError(in ErrorCode errorCode, in CaptureResultExtras resultExtras);
+    void onDeviceError(in ErrorCode errorCode, in CaptureResultExtras resultExtras);
 
     /**
      *  Callback called when the device is idle.
      */
-    oneway void onDeviceIdle();
+    void onDeviceIdle();
+
+    /**
+     *  Callback called when the surfaces corresponding to the stream with stream id 'streamId'
+     *  have been prepared.
+     *
+     *  This callback will only be called as a response to the ICameraDeviceUser.prepare() call.
+     *
+     *  @param streamId the stream id of the stream on which ICameraDeviceUser.prepare() was called.
+     */
+    void onPrepared(in int streamId);
 
     /**
      * Repeating request encountered an error and was stopped.
@@ -55,7 +65,7 @@ interface ICameraDeviceCallback {
      * @param repeatingRequestId the ID of the repeating request
      *        being stopped
      */
-    oneway void onRepeatingRequestError(in long lastFrameNumber, in int repeatingRequestId);
+    void onRepeatingRequestError(in long lastFrameNumber, in int repeatingRequestId);
 
     /**
      * Callback called when a capture request is completed.

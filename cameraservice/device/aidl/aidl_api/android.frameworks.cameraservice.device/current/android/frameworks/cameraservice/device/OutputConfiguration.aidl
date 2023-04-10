@@ -50,6 +50,6 @@ parcelable OutputConfiguration {
   }
   @Backing(type="int") @VintfStability
   enum WindowGroupId {
-    NONE = -1,
+    NONE = (-1) /* -1 */,
   }
 }

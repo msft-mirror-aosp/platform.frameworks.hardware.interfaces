@@ -28,7 +28,7 @@ parcelable CallbackConfig {
   /**
    * A list of CarData IDs that the callback is interested in.
    *
-   * <p>The callback will only be invoked fpr the IDs declared in the CallbackConfig.
+   * <p>The callback will only be invoked for the IDs declared in the CallbackConfig.
    */
   int[] carDataIds;
 }
