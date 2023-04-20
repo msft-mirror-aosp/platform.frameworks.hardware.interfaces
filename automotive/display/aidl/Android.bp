@@ -53,6 +53,5 @@ aidl_interface {
         },
 
     ],
-    system_ext_specific: true,
     frozen: true,
 }
