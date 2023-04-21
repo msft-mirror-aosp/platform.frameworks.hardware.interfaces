@@ -29,7 +29,7 @@ interface ICarTelemetryCallback {
   /**
    * Notifies client of currently active CarData IDs that the callback is associated with.
    *
-   * When CarData ID subscription changes, the method will be invoked.
+   * This is the new set of IDs that we want them to publish.
    */
   void onChange(in int[] ids);
 }
