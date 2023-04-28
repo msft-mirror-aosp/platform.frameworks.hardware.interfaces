@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2021 The Android Open Source Project
+// Copyright (C) 2023 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,21 +19,31 @@ package {
 }
 
 cc_test {
-    name: "VtsAidlPowerPolicyTargetTest",
+    name: "VtsHalCarDisplayTargetTest",
+    srcs: [
+        ":libgui_frame_event_aidl",
+        "./**/*.cpp",
+    ],
     defaults: [
         "VtsHalTargetTestDefaults",
         "use_libaidlvintf_gtest_helper_static",
     ],
-    srcs: [
-        "VtsAidlPowerPolicyTargetTest.cpp",
-    ],
     shared_libs: [
+        "android.frameworks.automotive.display-V2-ndk",
+        "android.hardware.graphics.bufferqueue@2.0",
+        "android.hidl.token@1.0-utils",
         "libbinder",
         "libbinder_ndk",
+        "libnativewindow",
+        "libui",
+        "libgui",
     ],
     static_libs: [
-        "android.frameworks.automotive.powerpolicy-V2-ndk",
-        "libgmock",
+        "libaidlcommonsupport",
+        "libbufferqueueconverter",
+    ],
+    header_libs: [
+        "libgui_aidl_headers",
     ],
     test_suites: [
         "general-tests",
