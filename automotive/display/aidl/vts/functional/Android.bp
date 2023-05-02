@@ -29,7 +29,6 @@ cc_test {
         "use_libaidlvintf_gtest_helper_static",
     ],
     shared_libs: [
-        "android.frameworks.automotive.display-V2-ndk",
         "android.hardware.graphics.bufferqueue@2.0",
         "android.hidl.token@1.0-utils",
         "libbinder",
@@ -39,6 +38,8 @@ cc_test {
         "libgui",
     ],
     static_libs: [
+        "android.frameworks.automotive.display-V2-ndk",
+        "android.hardware.common-V2-ndk",
         "libaidlcommonsupport",
         "libbufferqueueconverter",
     ],
