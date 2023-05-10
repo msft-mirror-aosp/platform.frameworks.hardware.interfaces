@@ -106,12 +106,12 @@ class CameraServiceListener : public BnCameraServiceListener {
         EXPECT_NE(mCameraStatuses.find(in_cameraId), mCameraStatuses.end());
         EXPECT_EQ(mCameraStatuses[in_cameraId], CameraDeviceStatus::STATUS_PRESENT);
 
-        if (in_status == CameraDeviceStatus::STATUS_NOT_PRESENT) {
-            auto res = mUnavailablePhysicalCameras[in_cameraId].emplace(in_physicalCameraId);
-            EXPECT_TRUE(res.second);
-        } else {
+        if (in_status == CameraDeviceStatus::STATUS_PRESENT) {
             auto res = mUnavailablePhysicalCameras[in_cameraId].erase(in_physicalCameraId);
             EXPECT_EQ(res, 1);
+        } else {
+            auto res = mUnavailablePhysicalCameras[in_cameraId].emplace(in_physicalCameraId);
+            EXPECT_TRUE(res.second);
         }
         return ndk::ScopedAStatus::ok();
     }
@@ -368,6 +368,7 @@ class VtsAidlCameraServiceTargetTest : public ::testing::TestWithParam<std::stri
 
         ndk::ScopedAStatus ret = mCameraService->addListener(listener, &cameraStatuses);
         EXPECT_TRUE(ret.isOk());
+        listener->initializeStatuses(cameraStatuses);
 
         for (const auto& it : cameraStatuses) {
             CameraMetadata rawMetadata;
