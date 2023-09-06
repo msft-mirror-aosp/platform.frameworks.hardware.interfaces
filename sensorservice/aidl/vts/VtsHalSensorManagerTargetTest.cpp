@@ -289,6 +289,9 @@ TEST_P(SensorManagerTest, EventQueueStress) {
             ASSERT_OK(queue->enableSensor(sensor.sensorHandle, sensor.minDelayUs, sensor.minDelayUs));
             // Make sure sensor resources can be cleaned up. b/260017505 for cases not calling disable
             ASSERT_OK(queue->disableSensor(sensor.sensorHandle));
+            // Enable/disable the first available sensor to make sure the event
+            // queue object is set up in the framework
+            break;
         }
     }
 }
