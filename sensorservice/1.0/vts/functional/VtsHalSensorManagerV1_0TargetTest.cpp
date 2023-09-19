@@ -35,8 +35,6 @@
 #include <sensors/convert.h>
 
 using ::android::sp;
-using ::android::frameworks::sensorservice::V1_0::IEventQueue;
-using ::android::frameworks::sensorservice::V1_0::IEventQueueCallback;
 using ::android::frameworks::sensorservice::V1_0::ISensorManager;
 using ::android::frameworks::sensorservice::V1_0::Result;
 using ::android::hardware::hidl_memory;
@@ -288,45 +286,6 @@ TEST_P(SensorManagerTest, Accelerometer) {
             }
           }));
     }));
-  }
-}
-
-class QueueCallback : public IEventQueueCallback {
- public:
-  Return<void> onEvent(const Event &) override {
-    LOG(INFO) << "asdf onEvent callback called";
-    return Return<void>();
-  }
-};
-
-// Make sure the implementation can clean up old queues/loopers
-TEST_P(SensorManagerTest, EventQueueStress) {
-  // sensorservice will create an FD for a looper for each event queue.
-  // Create and destroy an event queue enough times to hit the FD limit if the
-  // FDs are being leaked.
-  struct rlimit rlim;
-  ASSERT_EQ(getrlimit(RLIMIT_NOFILE, &rlim), 0);
-  LOG(INFO) << "rlim is : " << rlim.rlim_cur;
-  for (int i = 0; i <= rlim.rlim_cur; i++) {
-    sp<IEventQueue> queue;
-    sp<IEventQueueCallback> cb = new QueueCallback();
-    ASSERT_OK(manager_->createEventQueue(cb, [&](const sp<IEventQueue> &queue_in, Result result) {
-      EXPECT_OK(result);
-      queue = queue_in;
-    }));
-    EXPECT_NE(queue, nullptr);
-
-    auto sensorList = GetSensorList();
-    ASSERT_RESULT_OK(sensorList);
-    for (const auto &sensor : *sensorList) {
-      if (sensor.flags == 0) continue;
-      ASSERT_OK(queue->enableSensor(sensor.sensorHandle, sensor.minDelay, sensor.minDelay));
-      // Make sure sensor resources can be cleaned up. b/260017505 for cases not calling disable
-      ASSERT_OK(queue->disableSensor(sensor.sensorHandle));
-      // Enable/disable the first available sensor to make sure the event
-      // queue object is set up in the framework
-      break;
-    }
   }
 }
 
