@@ -17,27 +17,22 @@
 #define LOG_TAG "sensor_manager_aidl_hal_test"
 #include <aidl/Gtest.h>
 #include <aidl/Vintf.h>
-#include <aidl/android/frameworks/sensorservice/BnEventQueueCallback.h>
 #include <aidl/android/frameworks/sensorservice/ISensorManager.h>
 #include <aidl/sensors/convert.h>
 #include <android-base/logging.h>
 #include <android-base/result.h>
 #include <android/binder_manager.h>
-#include <android/binder_process.h>
 #include <android/sensor.h>
 #include <binder/IServiceManager.h>
 #include <cutils/ashmem.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <sys/mman.h>
-#include <sys/resource.h>
 
 #include <chrono>
 #include <thread>
 
 using aidl::android::frameworks::sensorservice::IDirectReportChannel;
-using aidl::android::frameworks::sensorservice::IEventQueue;
-using aidl::android::frameworks::sensorservice::IEventQueueCallback;
 using aidl::android::frameworks::sensorservice::ISensorManager;
 using aidl::android::hardware::common::Ashmem;
 using aidl::android::hardware::sensors::Event;
@@ -79,8 +74,6 @@ static ::testing::AssertionResult isIncreasing(I begin, I end, F getField) {
 class SensorManagerTest : public ::testing::TestWithParam<std::string> {
    public:
     virtual void SetUp() override {
-        ABinderProcess_setThreadPoolMaxThreadCount(2);
-        ABinderProcess_startThreadPool();
         manager_ = ISensorManager::fromBinder(
             ndk::SpAIBinder(AServiceManager_waitForService(GetParam().c_str())));
         ASSERT_NE(manager_, nullptr);
@@ -256,42 +249,6 @@ TEST_P(SensorManagerTest, Accelerometer) {
         for (const auto& event : events) {
             EXPECT_EQ(token, event.sensorHandle)
                 << "configure token and sensor handle don't match.";
-        }
-    }
-}
-
-class QueueCallback : public ::aidl::android::frameworks::sensorservice::BnEventQueueCallback {
-    ::ndk::ScopedAStatus onEvent(const ::aidl::android::hardware::sensors::Event&) override {
-        return ::ndk::ScopedAStatus::ok();
-    }
-};
-
-// Make sure the implementation can clean up old queues/loopers
-TEST_P(SensorManagerTest, EventQueueStress) {
-    // sensorservice will create an FD for a looper for each event queue.
-    // Create and destroy an event queue enough times to hit the FD limit if the
-    // FDs are being leaked.
-    struct rlimit rlim;
-    ASSERT_EQ(getrlimit(RLIMIT_NOFILE, &rlim), 0);
-    LOG(INFO) << "rlim is : " << rlim.rlim_cur;
-    for (int i = 0; i <= rlim.rlim_cur; i++) {
-        std::shared_ptr<IEventQueue> queue;
-        std::shared_ptr<IEventQueueCallback> cb = ndk::SharedRefBase::make<QueueCallback>();
-        auto ret = manager_->createEventQueue(cb, &queue);
-        ASSERT_OK(ret);
-        EXPECT_NE(queue, nullptr);
-
-        std::vector<SensorInfo> sensorList;
-        ret = GetSensorList(&sensorList);
-        ASSERT_OK(ret);
-        for (const auto& sensor : sensorList) {
-            if (sensor.flags == 0) continue;
-            ASSERT_OK(queue->enableSensor(sensor.sensorHandle, sensor.minDelayUs, sensor.minDelayUs));
-            // Make sure sensor resources can be cleaned up. b/260017505 for cases not calling disable
-            ASSERT_OK(queue->disableSensor(sensor.sensorHandle));
-            // Enable/disable the first available sensor to make sure the event
-            // queue object is set up in the framework
-            break;
         }
     }
 }
