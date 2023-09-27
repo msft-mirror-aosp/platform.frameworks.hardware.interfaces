@@ -18,6 +18,8 @@ package android.frameworks.automotive.powerpolicy.internal;
 
 /**
  * Structure to store the current policy state.
+ *
+ * @deprecated This is not used any more.
  */
 @VintfStability
 parcelable PolicyState {

@@ -24,6 +24,9 @@ import android.frameworks.automotive.powerpolicy.internal.PolicyState;
  * subscribers. When subscribing to policy changes, a filter can be specified so that the registered
  * callbacks can listen only to a specific power component's change.
  *
+ * @deprecated {@link android.automotive.powerpolicy.internal.ICarPowerPolicyDelegate} replaces
+ * this interface.
+ *
  * @hide
  */
 @VintfStability
