@@ -38,4 +38,6 @@ interface ICarPowerPolicyServer {
   boolean getPowerComponentState(in android.frameworks.automotive.powerpolicy.PowerComponent componentId);
   void registerPowerPolicyChangeCallback(in android.frameworks.automotive.powerpolicy.ICarPowerPolicyChangeCallback callback, in android.frameworks.automotive.powerpolicy.CarPowerPolicyFilter filter);
   void unregisterPowerPolicyChangeCallback(in android.frameworks.automotive.powerpolicy.ICarPowerPolicyChangeCallback callback);
+  void applyPowerPolicy(in @utf8InCpp String policyId);
+  void setPowerPolicyGroup(in @utf8InCpp String policyGroupId);
 }
