@@ -25,7 +25,7 @@ cc_test {
         "use_libaidlvintf_gtest_helper_static",
     ],
     srcs: [
-        "VtsHalStatsTargetTest.cpp",
+        "VtsHalStatsTargetTest.cpp"
     ],
     shared_libs: [
         "libbinder_ndk",
@@ -36,6 +36,6 @@ cc_test {
     ],
     test_suites: [
         "general-tests",
-        "vts",
+        "vts"
     ],
 }
