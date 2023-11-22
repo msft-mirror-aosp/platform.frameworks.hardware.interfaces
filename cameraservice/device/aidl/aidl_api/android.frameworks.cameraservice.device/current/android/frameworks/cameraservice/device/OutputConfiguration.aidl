@@ -34,6 +34,9 @@
 package android.frameworks.cameraservice.device;
 @VintfStability
 parcelable OutputConfiguration {
+  /**
+   * @deprecated Use surfaces instead.
+   */
   android.hardware.common.NativeHandle[] windowHandles;
   android.frameworks.cameraservice.device.OutputConfiguration.Rotation rotation;
   int windowGroupId;
@@ -41,6 +44,7 @@ parcelable OutputConfiguration {
   int width;
   int height;
   boolean isDeferred;
+  android.view.Surface[] surfaces = {};
   @Backing(type="int") @VintfStability
   enum Rotation {
     R0 = 0,
