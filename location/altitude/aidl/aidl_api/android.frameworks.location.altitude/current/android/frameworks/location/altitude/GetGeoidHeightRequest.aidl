@@ -33,7 +33,7 @@
 
 package android.frameworks.location.altitude;
 @VintfStability
-interface IAltitudeService {
-  android.frameworks.location.altitude.AddMslAltitudeToLocationResponse addMslAltitudeToLocation(in android.frameworks.location.altitude.AddMslAltitudeToLocationRequest request);
-  android.frameworks.location.altitude.GetGeoidHeightResponse getGeoidHeight(in android.frameworks.location.altitude.GetGeoidHeightRequest request);
+parcelable GetGeoidHeightRequest {
+  double latitudeDegrees;
+  double longitudeDegrees;
 }

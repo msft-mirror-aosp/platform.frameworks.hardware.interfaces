@@ -24,4 +24,7 @@ parcelable AddMslAltitudeToLocationResponse {
 
     /** @see android.location.Location#getMslAltitudeAccuracyMeters() */
     float mslAltitudeAccuracyMeters;
+
+    /** True if this call was successful. */
+    boolean success;
 }

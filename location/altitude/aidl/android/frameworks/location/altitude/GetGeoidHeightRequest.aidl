@@ -14,31 +14,14 @@
  * limitations under the License.
  */
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
-}
+package android.frameworks.location.altitude;
 
-aidl_interface {
-    name: "android.frameworks.location.altitude",
-    srcs: ["android/frameworks/location/altitude/*.aidl"],
-    owner: "google",
-    vendor_available: true,
-    host_supported: true,
-    stability: "vintf",
-    backend: {
-        java: {
-            platform_apis: true,
-        },
-        cpp: {
-            enabled: false,
-        },
-    },
-    versions_with_info: [
-        {
-            version: "1",
-            imports: [],
-        },
-    ],
-    frozen: false,
+@VintfStability
+parcelable GetGeoidHeightRequest {
 
+    /** @see android.location.Location#getLatitude() */
+    double latitudeDegrees;
+
+    /** @see android.location.Location#getLongitude() */
+    double longitudeDegrees;
 }
