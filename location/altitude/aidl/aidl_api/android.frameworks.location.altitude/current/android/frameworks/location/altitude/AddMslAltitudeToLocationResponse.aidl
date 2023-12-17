@@ -36,4 +36,5 @@ package android.frameworks.location.altitude;
 parcelable AddMslAltitudeToLocationResponse {
   double mslAltitudeMeters;
   float mslAltitudeAccuracyMeters;
+  boolean success;
 }
