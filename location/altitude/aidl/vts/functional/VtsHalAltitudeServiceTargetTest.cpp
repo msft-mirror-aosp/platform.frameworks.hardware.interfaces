@@ -59,10 +59,20 @@ TEST_P(AltitudeServiceTest, TestAddMslAltitudeToLocation) {
     service->addMslAltitudeToLocation(request, &response);
     ASSERT_NEAR(response.mslAltitudeMeters, -19.2359, 2);
     ASSERT_NEAR(response.mslAltitudeAccuracyMeters, 1.05f, 0.5f);
-    ASSERT_TRUE(response.success);
+    int32_t ver = 0;
+    auto ret = service->getInterfaceVersion(&ver);
+    ASSERT_TRUE(ret.isOk()) << ret;
+    if (ver >= 2) {
+        // In V2 we now have a "success" boolean in the response.
+        ASSERT_TRUE(response.success);
+    }
 }
 
 TEST_P(AltitudeServiceTest, TestGetGeoidHeight) {
+    int32_t ver = 0;
+    auto ret = service->getInterfaceVersion(&ver);
+    ASSERT_TRUE(ret.isOk()) << ret;
+    if (ver < 2) GTEST_SKIP() << "getGeoidHeight is introduced in V2";
     // Test known location near Hawaii.
     GetGeoidHeightRequest request;
     request.latitudeDegrees = 19.545519;
