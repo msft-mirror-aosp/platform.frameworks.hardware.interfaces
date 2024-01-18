@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,13 @@
 // with such a backward incompatible change, it has a high risk of breaking
 // later when a module using the interface is updated, e.g., Mainline modules.
 
-package android.frameworks.automotive.powerpolicy;
+package android.frameworks.vibrator;
+/* @hide */
 @VintfStability
-interface ICarPowerPolicyServer {
-  android.frameworks.automotive.powerpolicy.CarPowerPolicy getCurrentPowerPolicy();
-  boolean getPowerComponentState(in android.frameworks.automotive.powerpolicy.PowerComponent componentId);
-  void registerPowerPolicyChangeCallback(in android.frameworks.automotive.powerpolicy.ICarPowerPolicyChangeCallback callback, in android.frameworks.automotive.powerpolicy.CarPowerPolicyFilter filter);
-  void unregisterPowerPolicyChangeCallback(in android.frameworks.automotive.powerpolicy.ICarPowerPolicyChangeCallback callback);
-  void applyPowerPolicy(in @utf8InCpp String policyId);
-  void setPowerPolicyGroup(in @utf8InCpp String policyGroupId);
+interface IVibratorControlService {
+  oneway void registerVibratorController(in android.frameworks.vibrator.IVibratorController controller);
+  oneway void unregisterVibratorController(in android.frameworks.vibrator.IVibratorController controller);
+  oneway void setVibrationParams(in android.frameworks.vibrator.VibrationParam[] params, in android.frameworks.vibrator.IVibratorController token);
+  oneway void clearVibrationParams(in int typesMask, in android.frameworks.vibrator.IVibratorController token);
+  oneway void onRequestVibrationParamsComplete(in IBinder requestToken, in android.frameworks.vibrator.VibrationParam[] result);
 }

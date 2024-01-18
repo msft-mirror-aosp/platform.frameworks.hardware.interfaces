@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,14 @@
  * limitations under the License.
  */
 
-package android.frameworks.automotive.powerpolicy.internal;
+package android.frameworks.vibrator;
+
+import android.frameworks.vibrator.ScaleParam;
 
 /**
- * Structure to store the current policy state.
- *
- * @deprecated This is not used any more.
+ * Consolidated representation of all vibration parameters
  */
 @VintfStability
-parcelable PolicyState {
-  /**
-   * The current power policy ID.
-   */
-  @utf8InCpp String policyId;
-
-  /**
-   * The current power policy group ID.
-   */
-  @utf8InCpp String policyGroupId;
+union VibrationParam {
+    ScaleParam scale;
 }

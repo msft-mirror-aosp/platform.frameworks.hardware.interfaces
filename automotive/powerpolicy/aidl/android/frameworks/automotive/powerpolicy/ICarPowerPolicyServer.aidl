@@ -65,4 +65,26 @@ interface ICarPowerPolicyServer {
    * @throws IllegalArgumentException if the callback is not registered.
    */
   void unregisterPowerPolicyChangeCallback(in ICarPowerPolicyChangeCallback callback);
+
+  /**
+   * Applies the power policy.
+   *
+   * <p>{@code policyId} should be one of power policy IDs defined in
+   * {@code /vendor/etc/automotive/power_policy.xml} or predefined system power policies.
+   *
+   * @param policyId ID of power policy.
+   * @throws IllegalArgumentException if {@code policyId} is invalid.
+   */
+  void applyPowerPolicy(in @utf8InCpp String policyId);
+
+  /**
+   * Sets the current power policy group.
+   *
+   * <p>{@code policyGroupId} should be one of power policy group IDs defined in
+   * {@code /vendor/etc/automotive/power_policy.xml}.
+   *
+   * @param policyGroupId ID of power policy group.
+   * @throws IllegalArgumentException if {@code policyGroupId} is invalid.
+   */
+  void setPowerPolicyGroup(in @utf8InCpp String policyGroupId);
 }
