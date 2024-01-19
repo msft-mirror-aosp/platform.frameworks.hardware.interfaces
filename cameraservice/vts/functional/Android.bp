@@ -34,9 +34,9 @@ cc_test {
         "android.frameworks.cameraservice.common@2.0",
         "libfmq",
         "libarect",
+        "libcamera_metadata",
     ],
     shared_libs: [
-        "libcamera_metadata",
         "libmediandk",
         "libnativewindow",
         "liblog",
@@ -63,10 +63,10 @@ cc_test {
         "libaidlcommonsupport",
         "libfmq",
         "libarect",
+        "libcamera_metadata",
     ],
     shared_libs: [
         "libbinder_ndk",
-        "libcamera_metadata",
         "libmediandk",
         "libnativewindow",
         "liblog",
