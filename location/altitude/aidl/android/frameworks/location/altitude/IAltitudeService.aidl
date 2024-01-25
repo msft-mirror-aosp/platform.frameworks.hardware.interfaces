@@ -21,6 +21,7 @@ import android.frameworks.location.altitude.AddMslAltitudeToLocationResponse;
 import android.frameworks.location.altitude.GetGeoidHeightRequest;
 import android.frameworks.location.altitude.GetGeoidHeightResponse;
 
+/** @hide */
 @VintfStability
 interface IAltitudeService {
 
