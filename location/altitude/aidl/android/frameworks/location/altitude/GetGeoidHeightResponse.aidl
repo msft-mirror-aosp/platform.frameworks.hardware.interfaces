@@ -16,6 +16,7 @@
 
 package android.frameworks.location.altitude;
 
+/** @hide */
 @VintfStability
 parcelable GetGeoidHeightResponse {
 
