@@ -32,6 +32,7 @@
 // later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.frameworks.location.altitude;
+/* @hide */
 @VintfStability
 interface IAltitudeService {
   android.frameworks.location.altitude.AddMslAltitudeToLocationResponse addMslAltitudeToLocation(in android.frameworks.location.altitude.AddMslAltitudeToLocationRequest request);
