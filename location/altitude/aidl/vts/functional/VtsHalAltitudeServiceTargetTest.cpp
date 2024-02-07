@@ -82,7 +82,7 @@ TEST_P(AltitudeServiceTest, TestGetGeoidHeight) {
     service->getGeoidHeight(request, &response);
     ASSERT_NEAR(response.geoidHeightMeters, 18.2359, 2);
     ASSERT_NEAR(response.geoidHeightErrorMeters, 0.27f, 0.2f);
-    ASSERT_NEAR(response.expirationDistanceMeters, 10000, 1000);
+    ASSERT_NEAR(response.expirationDistanceMeters, 2828, 1000);
     ASSERT_NEAR(response.additionalGeoidHeightErrorMeters, 0.707f, 0.5f);
     ASSERT_TRUE(response.success);
 }
