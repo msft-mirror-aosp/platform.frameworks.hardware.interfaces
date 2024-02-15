@@ -17,6 +17,7 @@
 package android.frameworks.cameraservice.device;
 
 import android.hardware.common.NativeHandle;
+import android.view.Surface;
 
 /**
  * This describes camera output. It has configurations specific to a
@@ -54,6 +55,8 @@ parcelable OutputConfiguration {
      * modify their input data. If such cases exist, client must have additional
      * mechanisms to synchronize read and write accesses between consumers.
      * [1]: Ref : frameworks/av/camera/ndk/include/camera/NdkCameraDevice.h
+     *
+     * @deprecated Use surfaces instead.
      */
     NativeHandle[] windowHandles;
     /**
@@ -97,4 +100,20 @@ parcelable OutputConfiguration {
      * Ref:frameworks/base/core/java/android/hardware/camera2/params/OutputConfiguration.java
      */
     boolean isDeferred;
+    /**
+     * These must be Surfaces owned by AImageReader, acquired using AImageReader_getWindow()[1].
+     *
+     * When this vector has more than one entry, surface sharing is enabled. Clients may take
+     * advantage of this in advanced use cases when they would require create more streams
+     * than the limits the camera device imposes [2]. In this case, more than one window
+     * must be attached to an OutputConfiguration so that they map to one camera stream.
+     * The outputs will share memory buffers whenever possible. Due to buffer
+     * sharing, client should be careful while adding Surface outputs that
+     * modify their input data. If such cases exist, client must have additional
+     * mechanisms to synchronize read and write accesses between consumers.
+     *
+     * [1]: Ref: frameworks/av/media/ndk/include/media/NdkImageReader.h
+     * [2]: Ref: frameworks/av/camera/ndk/include/camera/NdkCameraDevice.h
+     */
+    Surface[] surfaces = {};
 }
