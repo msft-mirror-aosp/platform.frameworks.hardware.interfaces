@@ -21,7 +21,6 @@ package {
 aidl_interface {
     name: "android.frameworks.location.altitude",
     srcs: ["android/frameworks/location/altitude/*.aidl"],
-    owner: "google",
     vendor_available: true,
     host_supported: true,
     stability: "vintf",
