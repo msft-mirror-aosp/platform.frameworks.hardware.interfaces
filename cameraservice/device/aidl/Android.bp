@@ -12,21 +12,30 @@ aidl_interface {
         "android.hardware.common.fmq-V1",
         "android.hardware.common-V2",
     ],
-    frozen: true,
+    include_dirs: [
+        "frameworks/native/aidl/gui",
+    ],
+    frozen: false,
     backend: {
         cpp: {
+            enabled: false,
+        },
+        rust: {
             enabled: false,
         },
         java: {
             enabled: false,
         },
         ndk: {
+            additional_shared_libraries: [
+                "libnativewindow",
+            ],
             vndk: {
                 enabled: true,
             },
         },
     },
-    vndk_use_version: "1",
+    vndk_use_version: "2",
     versions_with_info: [
         {
             version: "1",
