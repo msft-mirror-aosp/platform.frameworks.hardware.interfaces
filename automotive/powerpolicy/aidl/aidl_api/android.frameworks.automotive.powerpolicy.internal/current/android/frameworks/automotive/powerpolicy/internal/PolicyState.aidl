@@ -32,6 +32,9 @@
 // later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.frameworks.automotive.powerpolicy.internal;
+/**
+ * @deprecated This is not used any more.
+ */
 @VintfStability
 parcelable PolicyState {
   @utf8InCpp String policyId;
