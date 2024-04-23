@@ -15,11 +15,6 @@ aidl_interface {
         java: {
             enabled: false,
         },
-        ndk: {
-            vndk: {
-                enabled: true,
-            },
-        },
     },
     vndk_use_version: "1",
     versions_with_info: [
