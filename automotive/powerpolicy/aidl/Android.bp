@@ -38,7 +38,18 @@ aidl_interface {
             enabled: true,
         },
     },
-    versions: ["1"],
+    versions_with_info: [
+        {
+            version: "1",
+            imports: [],
+        },
+        {
+            version: "2",
+            imports: [],
+        },
+
+    ],
+    frozen: false,
 }
 
 aidl_interface {
@@ -66,5 +77,4 @@ aidl_interface {
             imports: [],
         },
     ],
-
 }

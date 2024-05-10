@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *////////////////////////////////////////////////////////////////////////////////
+ */
+///////////////////////////////////////////////////////////////////////////////
 // THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -37,4 +38,6 @@ interface ICarPowerPolicyServer {
   boolean getPowerComponentState(in android.frameworks.automotive.powerpolicy.PowerComponent componentId);
   void registerPowerPolicyChangeCallback(in android.frameworks.automotive.powerpolicy.ICarPowerPolicyChangeCallback callback, in android.frameworks.automotive.powerpolicy.CarPowerPolicyFilter filter);
   void unregisterPowerPolicyChangeCallback(in android.frameworks.automotive.powerpolicy.ICarPowerPolicyChangeCallback callback);
+  void applyPowerPolicy(in @utf8InCpp String policyId);
+  void setPowerPolicyGroup(in @utf8InCpp String policyGroupId);
 }

@@ -32,7 +32,10 @@
 // later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.frameworks.automotive.powerpolicy.internal;
-/* @hide */
+/**
+ * @hide
+ * @deprecated {@link android.automotive.powerpolicy.internal.ICarPowerPolicyDelegate} replaces this interface.
+ */
 @VintfStability
 interface ICarPowerPolicySystemNotification {
   android.frameworks.automotive.powerpolicy.internal.PolicyState notifyCarServiceReady();

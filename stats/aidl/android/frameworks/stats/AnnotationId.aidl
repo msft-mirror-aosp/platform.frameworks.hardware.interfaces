@@ -64,4 +64,64 @@ enum AnnotationId {
      * This should only be used with binary state atoms.
      */
     STATE_NESTED = 8,
+
+    /**
+     * Annotation ID constant to indicate the restriction category of an atom.
+     * This annotation must only be attached to the atom id. This is an int annotation.
+     */
+    RESTRICTION_CATEGORY = 9,
+
+    /**
+     * Annotation ID to indicate that a field of an atom contains peripheral device info.
+     * This is a bool annotation.
+     */
+    FIELD_RESTRICTION_PERIPHERAL_DEVICE_INFO = 10,
+
+    /**
+     * Annotation ID to indicate that a field of an atom contains app usage information.
+     * This is a bool annotation.
+     */
+    FIELD_RESTRICTION_APP_USAGE = 11,
+
+    /**
+     * Annotation ID to indicate that a field of an atom contains app activity information.
+     * This is a bool annotation.
+     */
+    FIELD_RESTRICTION_APP_ACTIVITY = 12,
+
+    /**
+     * Annotation ID to indicate that a field of an atom contains health connect information.
+     * This is a bool annotation.
+     */
+    FIELD_RESTRICTION_HEALTH_CONNECT = 13,
+
+    /**
+     * Annotation ID to indicate that a field of an atom contains accessibility information.
+     * This is a bool annotation.
+     */
+    FIELD_RESTRICTION_ACCESSIBILITY = 14,
+
+    /**
+     * Annotation ID to indicate that a field of an atom contains system search information.
+     * This is a bool annotation.
+     */
+    FIELD_RESTRICTION_SYSTEM_SEARCH = 15,
+
+    /**
+     * Annotation ID to indicate that a field of an atom contains user engagement information.
+     * This is a bool annotation.
+     */
+    FIELD_RESTRICTION_USER_ENGAGEMENT = 16,
+
+    /**
+     * Annotation ID to indicate that a field of an atom contains ambient sensing information.
+     * This is a bool annotation.
+     */
+    FIELD_RESTRICTION_AMBIENT_SENSING = 17,
+
+    /**
+     * Annotation ID to indicate that a field of an atom contains demographic classification
+     * information. This is a bool annotation.
+     */
+    FIELD_RESTRICTION_DEMOGRAPHIC_CLASSIFICATION = 18,
 }

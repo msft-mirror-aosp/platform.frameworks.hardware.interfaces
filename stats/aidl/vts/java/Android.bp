@@ -18,16 +18,36 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-android_test {
-    name: "VtsVendorAtomJavaTest",
-    test_suites: ["device-tests"],
-    srcs: ["VtsVendorAtomJavaTest.java"],
-    static_libs: [
-        "junit",
-        "android.frameworks.stats-V2-java",
-        "compatibility-device-util-axt",
+java_test_host {
+    name: "VtsVendorAtomHostJavaTest",
+    srcs: [
+        "src/**/*.java",
+        "test_vendor_atom.proto",
+        ":libstats_atom_options_protos",
+    ],
+    test_suites: [
+        "vts",
+        "general-tests",
     ],
     libs: [
-        "android.test.runner",
+        "compatibility-host-util",
+        "cts-tradefed",
+        "host-libprotobuf-java-full",
+        "platformprotos",
+        "tradefed",
+        "truth",
     ],
+    static_libs: [
+        "cts-statsd-atom-host-test-utils",
+    ],
+    data: [
+        ":VtsVendorAtomJavaTest",
+    ],
+    proto: {
+        type: "full",
+        include_dirs: [
+            "external/protobuf/src",
+            "frameworks/proto_logging/stats",
+        ],
+    },
 }
