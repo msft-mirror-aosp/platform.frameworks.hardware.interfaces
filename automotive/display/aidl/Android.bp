@@ -37,9 +37,6 @@ aidl_interface {
             enabled: false,
         },
         ndk: {
-            vndk: {
-                enabled: false,
-            },
             additional_shared_libraries: [
                 "libnativewindow",
             ],
