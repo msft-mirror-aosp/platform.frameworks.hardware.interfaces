@@ -32,7 +32,6 @@ aidl_interface {
             ],
         },
     },
-    vndk_use_version: "2",
     versions_with_info: [
         {
             version: "1",
