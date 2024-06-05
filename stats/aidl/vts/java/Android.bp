@@ -35,15 +35,13 @@ java_test_host {
         "host-libprotobuf-java-full",
         "platformprotos",
         "tradefed",
-        "truth-prebuilt",
+        "truth",
     ],
     static_libs: [
         "cts-statsd-atom-host-test-utils",
-        "//hardware/google/pixel:pixelatoms-java_host",
     ],
     data: [
         ":VtsVendorAtomJavaTest",
-        "//hardware/google/pixel:pixelatoms-java_host",
     ],
     proto: {
         type: "full",

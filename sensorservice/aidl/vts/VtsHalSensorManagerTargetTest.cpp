@@ -84,7 +84,8 @@ class SensorManagerTest : public ::testing::TestWithParam<std::string> {
                                      const std::function<bool(SensorInfo)>& pred = nullptr) {
         ndk::ScopedAStatus ret = manager_->getSensorList(out_info);
         if (ret.isOk() && pred) {
-            out_info->erase(std::remove_if(out_info->begin(), out_info->end(), std::not1(pred)),
+            out_info->erase(std::remove_if(out_info->begin(), out_info->end(),
+                                           [pred](const auto& el) { return !pred(el); }),
                             out_info->end());
         }
         return ret;

@@ -18,12 +18,16 @@
 #include <aidl/Vintf.h>
 #include <aidl/android/frameworks/location/altitude/AddMslAltitudeToLocationRequest.h>
 #include <aidl/android/frameworks/location/altitude/AddMslAltitudeToLocationResponse.h>
+#include <aidl/android/frameworks/location/altitude/GetGeoidHeightRequest.h>
+#include <aidl/android/frameworks/location/altitude/GetGeoidHeightResponse.h>
 #include <aidl/android/frameworks/location/altitude/IAltitudeService.h>
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
 
 using ::aidl::android::frameworks::location::altitude::AddMslAltitudeToLocationRequest;
 using ::aidl::android::frameworks::location::altitude::AddMslAltitudeToLocationResponse;
+using ::aidl::android::frameworks::location::altitude::GetGeoidHeightRequest;
+using ::aidl::android::frameworks::location::altitude::GetGeoidHeightResponse;
 using ::aidl::android::frameworks::location::altitude::IAltitudeService;
 using ::android::getAidlHalInstanceNames;
 using ::android::PrintInstanceNameToString;
@@ -43,7 +47,7 @@ class AltitudeServiceTest : public TestWithParam<std::string> {
     std::shared_ptr<IAltitudeService> service;
 };
 
-TEST_P(AltitudeServiceTest, TestGetDistanceBasedExpiringGeoidHeight) {
+TEST_P(AltitudeServiceTest, TestAddMslAltitudeToLocation) {
     // Test known location near Hawaii.
     AddMslAltitudeToLocationRequest request;
     request.latitudeDegrees = 19.545519;
@@ -55,6 +59,32 @@ TEST_P(AltitudeServiceTest, TestGetDistanceBasedExpiringGeoidHeight) {
     service->addMslAltitudeToLocation(request, &response);
     ASSERT_NEAR(response.mslAltitudeMeters, -19.2359, 2);
     ASSERT_NEAR(response.mslAltitudeAccuracyMeters, 1.05f, 0.5f);
+    int32_t ver = 0;
+    auto ret = service->getInterfaceVersion(&ver);
+    ASSERT_TRUE(ret.isOk()) << ret;
+    if (ver >= 2) {
+        // In V2 we now have a "success" boolean in the response.
+        ASSERT_TRUE(response.success);
+    }
+}
+
+TEST_P(AltitudeServiceTest, TestGetGeoidHeight) {
+    int32_t ver = 0;
+    auto ret = service->getInterfaceVersion(&ver);
+    ASSERT_TRUE(ret.isOk()) << ret;
+    if (ver < 2) GTEST_SKIP() << "getGeoidHeight is introduced in V2";
+    // Test known location near Hawaii.
+    GetGeoidHeightRequest request;
+    request.latitudeDegrees = 19.545519;
+    request.longitudeDegrees = -155.998774;
+
+    GetGeoidHeightResponse response;
+    service->getGeoidHeight(request, &response);
+    ASSERT_NEAR(response.geoidHeightMeters, 18.2359, 2);
+    ASSERT_NEAR(response.geoidHeightErrorMeters, 0.27f, 0.2f);
+    ASSERT_NEAR(response.expirationDistanceMeters, 2828, 1000);
+    ASSERT_NEAR(response.additionalGeoidHeightErrorMeters, 0.707f, 0.5f);
+    ASSERT_TRUE(response.success);
 }
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(AltitudeServiceTest);
