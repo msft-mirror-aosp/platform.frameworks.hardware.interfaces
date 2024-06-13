@@ -15,6 +15,7 @@
  */
 
 package {
+    default_team: "trendy_team_haptics_framework",
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
@@ -35,6 +36,12 @@ aidl_interface {
             enabled: false,
         },
     },
-    frozen: false,
+    frozen: true,
+    versions_with_info: [
+        {
+            version: "1",
+            imports: [],
+        },
+    ],
 
 }

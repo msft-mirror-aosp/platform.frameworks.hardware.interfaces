@@ -44,13 +44,15 @@ using ::testing::InitGoogleTest;
 using ::testing::TestWithParam;
 using ::testing::ValuesIn;
 
-std::vector<VibrationParam> generateVibrationParams(int in_typesMask, float scale) {
+VibrationParam generateVibrationParam(int in_typesMask, float scale) {
     ScaleParam scaleParam = ScaleParam();
     scaleParam.typesMask = in_typesMask;
     scaleParam.scale = scale;
-    VibrationParam vibrationParam = VibrationParam(scaleParam);
-    std::vector<VibrationParam> vibrationParams = {vibrationParam};
-    return vibrationParams;
+    return VibrationParam(scaleParam);
+}
+
+std::vector<VibrationParam> generateVibrationParams(int in_typesMask, float scale) {
+    return {generateVibrationParam(in_typesMask, scale)};
 }
 
 class VibratorController : public BnVibratorController {
@@ -91,7 +93,7 @@ class VibratorControlServiceTest : public ::testing::TestWithParam<std::string> 
     std::shared_ptr<IVibratorControlService> service;
 };
 
-TEST_P(VibratorControlServiceTest, RegisterVibrationControllerTest) {
+TEST_P(VibratorControlServiceTest, RegisterAndUnregisterVibratorControllerTest) {
     std::shared_ptr<IVibratorController> vibratorController =
         ::ndk::SharedRefBase::make<VibratorController>();
 
@@ -100,18 +102,17 @@ TEST_P(VibratorControlServiceTest, RegisterVibrationControllerTest) {
     EXPECT_TRUE(service->unregisterVibratorController(vibratorController).isOk());
 }
 
-TEST_P(VibratorControlServiceTest, RequestVibrationParamsTest) {
-    std::shared_ptr<IVibratorController> vibratorController =
+TEST_P(VibratorControlServiceTest, RegisterAndUnregisterMultipleVibratorControllersTest) {
+    std::shared_ptr<IVibratorController> firstController =
+        ::ndk::SharedRefBase::make<VibratorController>();
+    std::shared_ptr<IVibratorController> secondController =
         ::ndk::SharedRefBase::make<VibratorController>();
 
-    EXPECT_TRUE(service->registerVibratorController(vibratorController).isOk());
+    EXPECT_TRUE(service->registerVibratorController(firstController).isOk());
+    EXPECT_TRUE(service->registerVibratorController(secondController).isOk());
 
-    EXPECT_TRUE(vibratorController
-                    ->requestVibrationParams(ScaleParam::TYPE_ALARM,
-                                             /* deadlineElapsedRealtimeMillis= */ 50,
-                                             service->asBinder())
-                    .isOk());
-    EXPECT_TRUE(service->unregisterVibratorController(vibratorController).isOk());
+    EXPECT_TRUE(service->unregisterVibratorController(firstController).isOk());
+    EXPECT_TRUE(service->unregisterVibratorController(secondController).isOk());
 }
 
 TEST_P(VibratorControlServiceTest, SetAndClearVibrationParamsTest) {
@@ -120,15 +121,70 @@ TEST_P(VibratorControlServiceTest, SetAndClearVibrationParamsTest) {
 
     EXPECT_TRUE(service->registerVibratorController(vibratorController).isOk());
 
+    // Set empty params
+    EXPECT_TRUE(service->setVibrationParams({}, vibratorController->getDefaultImpl()).isOk());
+
+    // Set single param
     EXPECT_TRUE(
         service
-            ->setVibrationParams(generateVibrationParams(ScaleParam::TYPE_ALARM, /* scale= */ 1),
+            ->setVibrationParams({generateVibrationParam(ScaleParam::TYPE_ALARM, /* scale= */ 1)},
+                                 vibratorController->getDefaultImpl())
+            .isOk());
+
+    // Set multiple params
+    EXPECT_TRUE(service
+                    ->setVibrationParams(
+                        {generateVibrationParam(ScaleParam::TYPE_ALARM, /* scale= */ 1),
+                         generateVibrationParam(ScaleParam::TYPE_RINGTONE, /* scale= */ 1)},
+                        vibratorController->getDefaultImpl())
+                    .isOk());
+
+    // Clear params
+    EXPECT_TRUE(
+        service->clearVibrationParams(ScaleParam::TYPE_ALARM, vibratorController->getDefaultImpl())
+            .isOk());
+
+    EXPECT_TRUE(service->unregisterVibratorController(vibratorController).isOk());
+}
+
+TEST_P(VibratorControlServiceTest, UnregisteredControllerSetAndClearVibrationParamsTest) {
+    std::shared_ptr<IVibratorController> vibratorController =
+        ::ndk::SharedRefBase::make<VibratorController>();
+
+    EXPECT_TRUE(
+        service
+            ->setVibrationParams(generateVibrationParams(ScaleParam::TYPE_MEDIA, /* scale= */ 1),
                                  vibratorController->getDefaultImpl())
             .isOk());
 
     EXPECT_TRUE(
-        service->clearVibrationParams(ScaleParam::TYPE_ALARM, vibratorController->getDefaultImpl())
+        service->clearVibrationParams(ScaleParam::TYPE_MEDIA, vibratorController->getDefaultImpl())
             .isOk());
+}
+
+TEST_P(VibratorControlServiceTest, UnexpectedRequestTokenOnRequestVibrationParamsCompleteTest) {
+    std::shared_ptr<IVibratorController> vibratorController =
+        ::ndk::SharedRefBase::make<VibratorController>();
+
+    auto unexpectedRequestToken = service->asBinder();
+
+    // Empty params
+    EXPECT_TRUE(service->onRequestVibrationParamsComplete(unexpectedRequestToken, {}).isOk());
+
+    // Single param
+    EXPECT_TRUE(service
+                    ->onRequestVibrationParamsComplete(
+                        unexpectedRequestToken,
+                        generateVibrationParams(ScaleParam::TYPE_ALARM, /* scale= */ 1))
+                    .isOk());
+
+    // Multiple params
+    EXPECT_TRUE(service
+                    ->onRequestVibrationParamsComplete(
+                        unexpectedRequestToken,
+                        {generateVibrationParam(ScaleParam::TYPE_ALARM, /* scale= */ 1),
+                         generateVibrationParam(ScaleParam::TYPE_RINGTONE, /* scale= */ 1)})
+                    .isOk());
 
     EXPECT_TRUE(service->unregisterVibratorController(vibratorController).isOk());
 }
