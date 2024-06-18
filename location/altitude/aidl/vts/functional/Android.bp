@@ -31,7 +31,7 @@ cc_test {
         "VtsHalAltitudeServiceTargetTest.cpp",
     ],
     static_libs: [
-        "android.frameworks.location.altitude-V1-ndk",
+        "android.frameworks.location.altitude-V2-ndk",
         "libgmock",
     ],
     shared_libs: [
