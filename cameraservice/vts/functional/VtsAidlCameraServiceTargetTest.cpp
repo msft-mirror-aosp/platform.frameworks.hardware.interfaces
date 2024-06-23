@@ -29,12 +29,15 @@
 #include <aidl/android/frameworks/cameraservice/service/CameraStatusAndId.h>
 #include <aidl/android/frameworks/cameraservice/service/ICameraService.h>
 #include <aidlcommonsupport/NativeHandle.h>
+#include <android-base/properties.h>
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
 #include <android/log.h>
+#include <android/native_window_aidl.h>
 #include <fmq/AidlMessageQueue.h>
 #include <gtest/gtest.h>
 #include <hidl/GtestPrinter.h>
+#include <hidl/ServiceManagement.h>
 #include <media/NdkImageReader.h>
 #include <stdint.h>
 #include <system/camera_metadata.h>
@@ -67,6 +70,8 @@ using ::aidl::android::frameworks::cameraservice::service::CameraDeviceStatus;
 using ::aidl::android::frameworks::cameraservice::service::CameraStatusAndId;
 using ::aidl::android::frameworks::cameraservice::service::ICameraService;
 using ::aidl::android::hardware::common::fmq::MQDescriptor;
+using ::aidl::android::view::Surface;
+using ::android::hardware::isHidlSupported;
 using ::android::hardware::camera::common::helper::CameraMetadata;
 using ::ndk::SpAIBinder;
 
@@ -79,6 +84,8 @@ static constexpr int kVGAImageHeight = 480;
 static constexpr int kNumRequests = 4;
 
 #define IDLE_TIMEOUT 2000000000  // ns
+
+using scoped_unique_image_reader = std::unique_ptr<AImageReader, decltype(&AImageReader_delete)>;
 
 class CameraServiceListener : public BnCameraServiceListener {
     std::map<std::string, CameraDeviceStatus> mCameraStatuses;
@@ -284,17 +291,33 @@ class VtsAidlCameraServiceTargetTest : public ::testing::TestWithParam<std::stri
 
     void TearDown() override {}
 
-    // creates an outputConfiguration with no deferred streams
-    static OutputConfiguration createOutputConfiguration(const std::vector<native_handle_t*>& nhs) {
+    static OutputConfiguration createOutputConfigurationMinimal() {
         OutputConfiguration output;
         output.rotation = OutputConfiguration::Rotation::R0;
         output.windowGroupId = -1;
         output.width = 0;
         output.height = 0;
         output.isDeferred = false;
+        return output;
+    }
+
+    // creates an outputConfiguration with no deferred streams
+    static OutputConfiguration createOutputConfiguration(const std::vector<native_handle_t*>& nhs) {
+        OutputConfiguration output = createOutputConfigurationMinimal();
         output.windowHandles.reserve(nhs.size());
         for (auto nh : nhs) {
             output.windowHandles.push_back(::android::makeToAidl(nh));
+        }
+        return output;
+    }
+
+    static OutputConfiguration createOutputConfiguration(
+        const std::vector<ANativeWindow*>& windows) {
+        OutputConfiguration output = createOutputConfigurationMinimal();
+        auto& surfaces = output.surfaces;
+        surfaces.reserve(windows.size());
+        for (auto anw : windows) {
+            surfaces.emplace_back(anw);
         }
         return output;
     }
@@ -361,7 +384,8 @@ class VtsAidlCameraServiceTargetTest : public ::testing::TestWithParam<std::stri
         }
         return streamConfig;
     }
-    void BasicCameraTests(bool prepareWindows) {
+    template <class Func>
+    void BasicCameraTests(bool prepareWindows, Func prepareOutputConfiguration) {
         std::shared_ptr<CameraServiceListener> listener =
             ::ndk::SharedRefBase::make<CameraServiceListener>();
         std::vector<CameraStatusAndId> cameraStatuses;
@@ -369,7 +393,6 @@ class VtsAidlCameraServiceTargetTest : public ::testing::TestWithParam<std::stri
         ndk::ScopedAStatus ret = mCameraService->addListener(listener, &cameraStatuses);
         EXPECT_TRUE(ret.isOk());
         listener->initializeStatuses(cameraStatuses);
-
         for (const auto& it : cameraStatuses) {
             CameraMetadata rawMetadata;
             if (it.deviceStatus != CameraDeviceStatus::STATUS_PRESENT) {
@@ -397,7 +420,6 @@ class VtsAidlCameraServiceTargetTest : public ::testing::TestWithParam<std::stri
             EXPECT_TRUE(requestMQ->isValid());
             EXPECT_TRUE((requestMQ->availableToWrite() >= 0));
 
-            AImageReader* reader = nullptr;
             bool isDepthOnlyDevice =
                 !doesCapabilityExist(rawMetadata,
                                      ANDROID_REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE) &&
@@ -408,7 +430,10 @@ class VtsAidlCameraServiceTargetTest : public ::testing::TestWithParam<std::stri
             int chosenImageHeight = kVGAImageHeight;
             bool isSecureOnlyCamera = isSecureOnlyDevice(rawMetadata);
             status_t mStatus = OK;
+            scoped_unique_image_reader readerPtr(nullptr, AImageReader_delete);
+
             if (isSecureOnlyCamera) {
+                AImageReader* reader = nullptr;
                 StreamConfiguration secureStreamConfig = getStreamConfiguration(
                     rawMetadata, ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
                     ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT,
@@ -421,7 +446,8 @@ class VtsAidlCameraServiceTargetTest : public ::testing::TestWithParam<std::stri
                 mStatus = AImageReader_newWithUsage(
                     chosenImageWidth, chosenImageHeight, chosenImageFormat,
                     AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT, kCaptureRequestCount, &reader);
-
+                EXPECT_EQ(mStatus, AMEDIA_OK);
+                readerPtr = scoped_unique_image_reader(reader, AImageReader_delete);
             } else {
                 if (isDepthOnlyDevice) {
                     StreamConfiguration depthStreamConfig = getStreamConfiguration(
@@ -434,19 +460,18 @@ class VtsAidlCameraServiceTargetTest : public ::testing::TestWithParam<std::stri
                     chosenImageWidth = depthStreamConfig.width;
                     chosenImageHeight = depthStreamConfig.height;
                 }
+                AImageReader* reader = nullptr;
                 mStatus = AImageReader_new(chosenImageWidth, chosenImageHeight, chosenImageFormat,
                                            kCaptureRequestCount, &reader);
+                EXPECT_EQ(mStatus, AMEDIA_OK);
+                readerPtr = scoped_unique_image_reader(reader, AImageReader_delete);
             }
 
-            EXPECT_EQ(mStatus, AMEDIA_OK);
-            native_handle_t* wh = nullptr;
-            mStatus = AImageReader_getWindowNativeHandle(reader, &wh);
-            EXPECT_TRUE(mStatus == AMEDIA_OK && wh != nullptr);
+            OutputConfiguration output = prepareOutputConfiguration(readerPtr);
 
             ret = deviceRemote->beginConfigure();
             EXPECT_TRUE(ret.isOk());
 
-            OutputConfiguration output = createOutputConfiguration({wh});
             int32_t streamId = -1;
             ret = deviceRemote->createStream(output, &streamId);
             EXPECT_TRUE(ret.isOk());
@@ -533,8 +558,28 @@ class VtsAidlCameraServiceTargetTest : public ::testing::TestWithParam<std::stri
 
 // Basic AIDL calls for ICameraService
 TEST_P(VtsAidlCameraServiceTargetTest, BasicCameraLifeCycleTest) {
-    BasicCameraTests(/*prepareWindows*/ false);
-    BasicCameraTests(/*prepareWindows*/ true);
+    auto prepareOutputConfigurationWh = [](scoped_unique_image_reader& readerPtr) {
+        native_handle_t* wh = nullptr;
+        status_t status = AImageReader_getWindowNativeHandle(readerPtr.get(), &wh);
+        EXPECT_TRUE(status == AMEDIA_OK && wh != nullptr);
+
+        return createOutputConfiguration({wh});
+    };
+    auto prepareOutputConfigurationSurface = [](scoped_unique_image_reader& readerPtr) {
+        ANativeWindow* anw = nullptr;
+        status_t status = AImageReader_getWindow(readerPtr.get(), &anw);
+        EXPECT_TRUE(status == AMEDIA_OK && anw != nullptr);
+
+        return createOutputConfiguration({anw});
+    };
+
+    if (isHidlSupported()) {
+        BasicCameraTests(/*prepareWindows*/ false, prepareOutputConfigurationWh);
+        BasicCameraTests(/*prepareWindows*/ true, prepareOutputConfigurationWh);
+    }
+    // The framework supports AIDL interface version 2
+    BasicCameraTests(/*prepareWindows*/ false, prepareOutputConfigurationSurface);
+    BasicCameraTests(/*prepareWindows*/ true, prepareOutputConfigurationSurface);
 }
 
 TEST_P(VtsAidlCameraServiceTargetTest, CameraServiceListenerTest) {

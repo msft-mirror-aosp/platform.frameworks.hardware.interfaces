@@ -89,6 +89,8 @@ static constexpr int kNumRequests = 4;
 #define SETUP_TIMEOUT 2000000000  // ns
 #define IDLE_TIMEOUT 2000000000   // ns
 
+using scoped_unique_image_reader = std::unique_ptr<AImageReader, decltype(&AImageReader_delete)>;
+
 // Stub listener implementation
 class CameraServiceListener : public ICameraServiceListener {
     std::map<hidl_string, CameraDeviceStatus> mCameraStatuses;
@@ -388,6 +390,7 @@ TEST_P(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
             cameraStatuses = retStatuses;
         });
     EXPECT_TRUE(remoteRet.isOk() && status == Status::NO_ERROR);
+
     for (const auto& it : cameraStatuses) {
         CameraMetadata rawMetadata;
         if (it.deviceStatus != CameraDeviceStatus::STATUS_PRESENT) {
@@ -427,7 +430,9 @@ TEST_P(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
         int chosenImageHeight = kVGAImageHeight;
         bool isSecureOnlyCamera = isSecureOnlyDevice(rawMetadata);
         status_t mStatus = OK;
+        scoped_unique_image_reader readerPtr(nullptr, AImageReader_delete);
         if (isSecureOnlyCamera) {
+            AImageReader* reader = nullptr;
             StreamConfiguration secureStreamConfig =
                 getStreamConfiguration(rawMetadata, ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS,
                                        ANDROID_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT,
@@ -440,8 +445,11 @@ TEST_P(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
             mStatus = AImageReader_newWithUsage(
                 chosenImageWidth, chosenImageHeight, chosenImageFormat,
                 AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT, kCaptureRequestCount, &reader);
+            EXPECT_EQ(mStatus, AMEDIA_OK);
+            readerPtr = scoped_unique_image_reader(reader, AImageReader_delete);
 
         } else {
+            AImageReader* reader = nullptr;
             if (isDepthOnlyDevice) {
                 StreamConfiguration depthStreamConfig = getStreamConfiguration(
                     rawMetadata, ANDROID_DEPTH_AVAILABLE_DEPTH_STREAM_CONFIGURATIONS,
@@ -455,11 +463,12 @@ TEST_P(VtsHalCameraServiceV2_0TargetTest, BasicCameraLifeCycleTest) {
             }
             mStatus = AImageReader_new(chosenImageWidth, chosenImageHeight, chosenImageFormat,
                                        kCaptureRequestCount, &reader);
+            EXPECT_EQ(mStatus, AMEDIA_OK);
+            readerPtr = scoped_unique_image_reader(reader, AImageReader_delete);
         }
 
-        EXPECT_EQ(mStatus, AMEDIA_OK);
         native_handle_t* wh = nullptr;
-        mStatus = AImageReader_getWindowNativeHandle(reader, &wh);
+        mStatus = AImageReader_getWindowNativeHandle(readerPtr.get(), &wh);
         EXPECT_TRUE(mStatus == AMEDIA_OK && wh != nullptr);
         OutputConfiguration output = createOutputConfiguration({wh});
         Return<Status> ret = deviceRemote->beginConfigure();
