@@ -18,7 +18,10 @@ package android.frameworks.location.altitude;
 
 import android.frameworks.location.altitude.AddMslAltitudeToLocationRequest;
 import android.frameworks.location.altitude.AddMslAltitudeToLocationResponse;
+import android.frameworks.location.altitude.GetGeoidHeightRequest;
+import android.frameworks.location.altitude.GetGeoidHeightResponse;
 
+/** @hide */
 @VintfStability
 interface IAltitudeService {
 
@@ -28,4 +31,12 @@ interface IAltitudeService {
      */
     AddMslAltitudeToLocationResponse addMslAltitudeToLocation(
             in AddMslAltitudeToLocationRequest request);
+
+    /**
+     * Returns the geoid height (a.k.a. geoid undulation) at the location specified in {@code
+     * request}. The geoid height at a location is defined as the difference between an altitude
+     * measured above the World Geodetic System 1984 reference ellipsoid (WGS84) and its
+     * corresponding Mean Sea Level altitude.
+     */
+     GetGeoidHeightResponse getGeoidHeight(in GetGeoidHeightRequest request);
 }
