@@ -12,21 +12,26 @@ aidl_interface {
         "android.hardware.common.fmq-V1",
         "android.hardware.common-V2",
     ],
+    include_dirs: [
+        "frameworks/native/aidl/gui",
+    ],
     frozen: true,
     backend: {
         cpp: {
+            enabled: false,
+        },
+        rust: {
             enabled: false,
         },
         java: {
             enabled: false,
         },
         ndk: {
-            vndk: {
-                enabled: true,
-            },
+            additional_shared_libraries: [
+                "libnativewindow",
+            ],
         },
     },
-    vndk_use_version: "1",
     versions_with_info: [
         {
             version: "1",
@@ -36,6 +41,15 @@ aidl_interface {
                 "android.hardware.common-V2",
             ],
         },
+        {
+            version: "2",
+            imports: [
+                "android.frameworks.cameraservice.common-V1",
+                "android.hardware.common.fmq-V1",
+                "android.hardware.common-V2",
+            ],
+        },
+
     ],
 
 }
