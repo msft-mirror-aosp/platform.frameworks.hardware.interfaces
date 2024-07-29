@@ -88,5 +88,6 @@ cc_test {
         "liblog",
     ],
 
+    test_config: "VtsAidlCameraServiceTargetTest.xml",
     test_suites: ["vts"],
 }
