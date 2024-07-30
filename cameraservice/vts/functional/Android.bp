@@ -19,6 +19,11 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
+filegroup {
+    name: "cameraservice_vts_default_map",
+    srcs: ["cameraservice_vts_default.map"],
+}
+
 cc_test {
     name: "VtsHalCameraServiceV2_0TargetTest",
     defaults: ["VtsHalTargetTestDefaults"],
@@ -37,6 +42,14 @@ cc_test {
         "libarect",
         "libcamera_metadata",
     ],
+
+    // This is a vendor test that needs can be run on older devices
+    // so should be built with a static stl as well, since if its built
+    // with a newer shared libc++, the older device may not have some symbols.
+    // b/333438055 elaborates on what can go wrong when libc++ is partially
+    // exported.
+    version_script: ":cameraservice_vts_default_map",
+    stl: "libc++_static",
     shared_libs: [
         "libmediandk",
         "libnativewindow",
@@ -59,13 +72,15 @@ cc_test {
         "android.hardware.common.fmq-V1-ndk",
         "android.hardware.camera.common-helper",
         "android.frameworks.cameraservice.common-V1-ndk",
-        "android.frameworks.cameraservice.device-V1-ndk",
-        "android.frameworks.cameraservice.service-V1-ndk",
+        "android.frameworks.cameraservice.device-V2-ndk",
+        "android.frameworks.cameraservice.service-V2-ndk",
         "libaidlcommonsupport",
         "libfmq",
         "libarect",
         "libcamera_metadata",
     ],
+    version_script: ":cameraservice_vts_default_map",
+    stl: "libc++_static",
     shared_libs: [
         "libbinder_ndk",
         "libmediandk",
@@ -73,5 +88,6 @@ cc_test {
         "liblog",
     ],
 
+    test_config: "VtsAidlCameraServiceTargetTest.xml",
     test_suites: ["vts"],
 }
