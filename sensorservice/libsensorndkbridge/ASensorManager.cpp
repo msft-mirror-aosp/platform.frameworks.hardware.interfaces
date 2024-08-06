@@ -31,6 +31,7 @@
 
 using aidl::android::frameworks::sensorservice::IEventQueue;
 using aidl::android::frameworks::sensorservice::ISensorManager;
+using aidl::android::hardware::sensors::ISensors;
 using aidl::android::hardware::sensors::SensorInfo;
 using aidl::android::hardware::sensors::SensorType;
 using android::BAD_VALUE;
@@ -402,28 +403,58 @@ int ASensor_getHandle(ASensor const* sensor) {
     return reinterpret_cast<const SensorInfo*>(sensor)->sensorHandle;
 }
 
-#if 0
 int ASensor_getReportingMode(ASensor const* sensor) {
     RETURN_IF_SENSOR_IS_NULL(AREPORTING_MODE_INVALID);
-    return 0;
+    int32_t flags = reinterpret_cast<const SensorInfo*>(sensor)->flags;
+    switch (flags & SensorInfo::SENSOR_FLAG_BITS_MASK_REPORTING_MODE) {
+        case SensorInfo::SENSOR_FLAG_BITS_CONTINUOUS_MODE:
+            return AREPORTING_MODE_CONTINUOUS;
+        case SensorInfo::SENSOR_FLAG_BITS_ON_CHANGE_MODE:
+            return AREPORTING_MODE_ON_CHANGE;
+        case SensorInfo::SENSOR_FLAG_BITS_ONE_SHOT_MODE:
+            return AREPORTING_MODE_ONE_SHOT;
+        case SensorInfo::SENSOR_FLAG_BITS_SPECIAL_REPORTING_MODE:
+            return AREPORTING_MODE_SPECIAL_TRIGGER;
+        default:
+            return AREPORTING_MODE_INVALID;
+    }
 }
 
 bool ASensor_isWakeUpSensor(ASensor const* sensor) {
     RETURN_IF_SENSOR_IS_NULL(false);
-    return false;
+    return reinterpret_cast<const SensorInfo*>(sensor)->flags &
+           SensorInfo::SENSOR_FLAG_BITS_WAKE_UP;
 }
 
 bool ASensor_isDirectChannelTypeSupported(
         ASensor const* sensor, int channelType) {
     RETURN_IF_SENSOR_IS_NULL(false);
+    int32_t flags = reinterpret_cast<const SensorInfo*>(sensor)->flags;
+    if (channelType == ASENSOR_DIRECT_CHANNEL_TYPE_SHARED_MEMORY) {
+        return flags & SensorInfo::SENSOR_FLAG_BITS_DIRECT_CHANNEL_ASHMEM;
+    } else if (channelType == ASENSOR_DIRECT_CHANNEL_TYPE_HARDWARE_BUFFER) {
+        return flags & SensorInfo::SENSOR_FLAG_BITS_DIRECT_CHANNEL_GRALLOC;
+    }
     return false;
 }
 
 int ASensor_getHighestDirectReportRateLevel(ASensor const* sensor) {
     RETURN_IF_SENSOR_IS_NULL(ASENSOR_DIRECT_RATE_STOP);
-    return 0;
+    int32_t flags = reinterpret_cast<const SensorInfo*>(sensor)->flags;
+    flags &= SensorInfo::SENSOR_FLAG_BITS_MASK_DIRECT_REPORT;
+    switch (flags >> SENSOR_FLAG_SHIFT_DIRECT_REPORT) {
+        case static_cast<int32_t>(ISensors::RateLevel::STOP):
+            return ASENSOR_DIRECT_RATE_STOP;
+        case static_cast<int32_t>(ISensors::RateLevel::NORMAL):
+            return ASENSOR_DIRECT_RATE_NORMAL;
+        case static_cast<int32_t>(ISensors::RateLevel::FAST):
+            return ASENSOR_DIRECT_RATE_FAST;
+        case static_cast<int32_t>(ISensors::RateLevel::VERY_FAST):
+            return ASENSOR_DIRECT_RATE_VERY_FAST;
+        default:
+            return ASENSOR_DIRECT_RATE_STOP;
+    }
 }
-#endif
 
 static ALooper *getTheLooper() {
     static ALooper *sLooper = NULL;
