@@ -19,9 +19,54 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
+// VTS tests must link to HAL definition libraries statically.
+// We have a defaults that is separate from VtsHalTargetTestDefaults
+// since most VTS tests aren't vendor: true, so we'd still want to have
+// shared lib deps (libcutils, libutils etc) for them.
+cc_defaults {
+    name: "CameraServiceHalVtsTargetTestDefaults",
+    defaults: [
+        "hidl_defaults",
+    ],
+
+    // Lists all dependencies that can *not* be expected on the device.
+    static_libs: [
+        "VtsHalHidlTestUtils",
+        "libbase",
+        "libhidlbase",
+        "libcutils",
+        "libhidl-gen-utils",
+        "libutils",
+    ],
+
+    header_libs: [
+        "libhidl_gtest_helper",
+    ],
+
+    // Lists all system dependencies that can be expected on the device.
+    shared_libs: [
+        // All the following are dependencies of any HAL definition library.
+        "liblog",
+    ],
+    cflags: [
+        "-O0",
+        "-g",
+    ],
+
+    target: {
+        android: {
+            shared_libs: [
+                "libvndksupport",
+            ],
+        },
+    },
+
+    require_root: true,
+}
+
 cc_test {
     name: "VtsHalCameraServiceV2_0TargetTest",
-    defaults: ["VtsHalTargetTestDefaults"],
+    defaults: ["CameraServiceHalVtsTargetTestDefaults"],
 
     vendor: true,
     srcs: ["VtsHalCameraServiceV2_0TargetTest.cpp"],
@@ -49,7 +94,7 @@ cc_test {
 cc_test {
     name: "VtsAidlCameraServiceTargetTest",
     defaults: [
-        "VtsHalTargetTestDefaults",
+        "CameraServiceHalVtsTargetTestDefaults",
     ],
 
     vendor: true,
