@@ -40,7 +40,7 @@ java_test_host {
     static_libs: [
         "cts-statsd-atom-host-test-utils",
     ],
-    data: [
+    device_common_data: [
         ":VtsVendorAtomJavaTest",
     ],
     proto: {
