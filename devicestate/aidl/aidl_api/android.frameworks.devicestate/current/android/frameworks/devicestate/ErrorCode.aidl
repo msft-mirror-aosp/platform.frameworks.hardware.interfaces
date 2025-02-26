@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,10 @@
 // with such a backward incompatible change, it has a high risk of breaking
 // later when a module using the interface is updated, e.g., Mainline modules.
 
-package android.frameworks.cameraservice.service;
-@VintfStability
-interface ICameraService {
-  android.frameworks.cameraservice.service.CameraStatusAndId[] addListener(in android.frameworks.cameraservice.service.ICameraServiceListener listener);
-  android.frameworks.cameraservice.device.ICameraDeviceUser connectDevice(in android.frameworks.cameraservice.device.ICameraDeviceCallback callback, in String cameraId);
-  android.frameworks.cameraservice.device.CameraMetadata getCameraCharacteristics(in String cameraId);
-  android.frameworks.cameraservice.common.ProviderIdAndVendorTagSections[] getCameraVendorTagSections();
-  void removeListener(in android.frameworks.cameraservice.service.ICameraServiceListener listener);
-  android.frameworks.cameraservice.device.ICameraDeviceUser connectDeviceV2(in android.frameworks.cameraservice.device.ICameraDeviceCallback callback, in String cameraId, in boolean sharedMode);
+package android.frameworks.devicestate;
+@Backing(type="int") @VintfStability
+enum ErrorCode {
+  OK = 0,
+  BAD_INPUT = 1,
+  ALREADY_EXISTS = 1,
 }
