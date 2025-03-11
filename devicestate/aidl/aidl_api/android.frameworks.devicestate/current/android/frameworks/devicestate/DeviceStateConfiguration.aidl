@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,18 @@
 // with such a backward incompatible change, it has a high risk of breaking
 // later when a module using the interface is updated, e.g., Mainline modules.
 
-package android.frameworks.cameraservice.service;
+package android.frameworks.devicestate;
 @VintfStability
-interface ICameraService {
-  android.frameworks.cameraservice.service.CameraStatusAndId[] addListener(in android.frameworks.cameraservice.service.ICameraServiceListener listener);
-  android.frameworks.cameraservice.device.ICameraDeviceUser connectDevice(in android.frameworks.cameraservice.device.ICameraDeviceCallback callback, in String cameraId);
-  android.frameworks.cameraservice.device.CameraMetadata getCameraCharacteristics(in String cameraId);
-  android.frameworks.cameraservice.common.ProviderIdAndVendorTagSections[] getCameraVendorTagSections();
-  void removeListener(in android.frameworks.cameraservice.service.ICameraServiceListener listener);
-  android.frameworks.cameraservice.device.ICameraDeviceUser connectDeviceV2(in android.frameworks.cameraservice.device.ICameraDeviceCallback callback, in String cameraId, in boolean sharedMode);
+parcelable DeviceStateConfiguration {
+  long deviceProperties;
+  @Backing(type="long") @VintfStability
+  enum DeviceStatePropertyValue {
+    FOLDABLE_HARDWARE_CONFIGURATION_FOLD_IN_CLOSED = (1 << 0) /* 1 */,
+    FOLDABLE_HARDWARE_CONFIGURATION_FOLD_IN_HALF_OPEN = (1 << 1) /* 2 */,
+    FOLDABLE_HARDWARE_CONFIGURATION_FOLD_IN_OPEN = (1 << 2) /* 4 */,
+    FOLDABLE_DISPLAY_CONFIGURATION_OUTER_PRIMARY = (1 << 3) /* 8 */,
+    FOLDABLE_DISPLAY_CONFIGURATION_INNER_PRIMARY = (1 << 4) /* 16 */,
+    FEATURE_REAR_DISPLAY = (1 << 5) /* 32 */,
+    FEATURE_DUAL_DISPLAY = (1 << 6) /* 64 */,
+  }
 }
